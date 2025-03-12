@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/SimSwitcherIcon.png</file>
+    </qresource>
+    <qresource prefix="/">
+        <file>icons/SimSwitcherIcon256.png</file>
+    </qresource>
+    <qresource prefix="/">
+        <file>inc/packsDil.csv</file>
+    </qresource>
+</RCC>
