@@ -19,7 +19,7 @@
 
 QString acitveSubDirName = "Mods"; // Change this to your desired subdirectory
 QString disabledSubDirName = "(d)Mods"; // Change this to your desired subdirectory
-QString csvFilePath = ":/inc/packsDil.csv";
+QString csvFilePath = "inc/packsDil.csv";
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -61,6 +61,8 @@ MainWindow::MainWindow(QWidget *parent)
         ui->gameLineEdit->setText(cachedGameSource);
         populatePacksListWidget(cachedGameSource,csvFilePath);
     }
+
+    qDebug() << "Resource exists:" << QFile::exists(":/inc/packsDil.csv");
 }
 
 void MainWindow::on_menuMods_clicked(){
