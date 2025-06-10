@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QListWidgetItem>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -31,6 +32,10 @@ private slots:
     void on_fileDeselectAllButton_clicked();
     void on_packsSelectAllButton_clicked();
     void on_packsDeselectAllButton_clicked();
+    void on_modsSaveButton_clicked();
+    void on_modsLoadButton_clicked();
+    void onPresetSelected(QListWidgetItem* item);
+    void on_presetDeleteButton_clicked();
 
 private:
     Ui::SimsSwitcher *ui;
@@ -40,7 +45,9 @@ private:
     QString getDisablePacksStringFromListWidget();
     void savePacksSelection();
     void sortPacksListByCategory();
-
-
+    QStringList presetList();
+    void savePreset(const QString& presetName);
+    void loadPreset(const QString& presetName);
+    void updatePresetList();
 };
 #endif // MAINWINDOW_H

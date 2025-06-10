@@ -27,6 +27,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    updatePresetList();
+
     // Set the window title
     this->setWindowTitle("SimsSwitcher");
 
@@ -73,6 +75,7 @@ void MainWindow::on_menuPacks_clicked(){
     ui->mainStackedWidget->setCurrentIndex(1);
 }
 
+//Mods Page code Below
 
 void MainWindow::on_browseRootButton_clicked() {
     // Open a dialog for the user to select the Sims 4 Root Directory.
@@ -189,6 +192,93 @@ void MainWindow::populateFileList(const QString& firstDir, const QString& second
 
 }
 
+QStringList MainWindow::presetList() {
+    QSettings settings("Falcon", "SimsSwitcher");
+    settings.beginGroup("presets");
+    QStringList keys = settings.childKeys();
+    settings.endGroup();
+    return keys;
+}
+
+void MainWindow::savePreset(const QString& presetName) {
+    QStringList enabledItems;
+    for (int i = 0; i < ui->fileListWidget->count(); ++i) {
+        QListWidgetItem* item = ui->fileListWidget->item(i);
+        if ((item->flags() & Qt::ItemIsUserCheckable) && item->checkState() == Qt::Checked) {
+            enabledItems << item->text();
+        }
+    }
+    QSettings settings("Falcon", "SimsSwitcher");
+    settings.setValue("presets/" + presetName, enabledItems);
+}
+
+void MainWindow::loadPreset(const QString& presetName) {
+    QSettings settings("Falcon", "SimsSwitcher");
+    QStringList enabledItems = settings.value("presets/" + presetName).toStringList();
+    for (int i = 0; i < ui->fileListWidget->count(); ++i) {
+        QListWidgetItem* item = ui->fileListWidget->item(i);
+        if (item->flags() & Qt::ItemIsUserCheckable) {
+            item->setCheckState(enabledItems.contains(item->text()) ? Qt::Checked : Qt::Unchecked);
+        }
+    }
+}
+
+void MainWindow::on_presetDeleteButton_clicked()
+{
+    // Get the selected preset name from the list widget
+    QString presetName = ui->presetList->currentItem()->text();
+
+    // Confirm deletion with the user
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, tr("Delete Preset"),
+                                  tr("Are you sure you want to delete the preset '%1'?").arg(presetName),
+                                  QMessageBox::Yes | QMessageBox::No);
+    if (reply == QMessageBox::Yes) {
+        QSettings settings("Falcon", "SimsSwitcher");
+        settings.remove("presets/" + presetName);
+        updatePresetList();
+    }
+}
+
+void MainWindow::on_modsLoadButton_clicked()
+{
+    // Get the selected preset name from the list widget
+    QString presetName = ui->presetList->currentItem()->text();
+
+    // Load the preset using the existing load function
+    loadPreset(presetName);
+}
+
+void MainWindow::on_modsSaveButton_clicked()
+{
+    // Get the preset name from the line edit
+    QString presetName = ui->presetLineEdit->text().trimmed();
+
+    if (presetName.isEmpty()) {
+        QMessageBox::warning(this, tr("Error"), tr("Preset name cannot be empty."));
+        return;
+    }
+
+    // Save the preset using the existing save function
+    savePreset(presetName);
+
+    // Update the preset list in the UI
+    updatePresetList();
+}
+
+void MainWindow::updatePresetList()
+{
+    QStringList presets = presetList();
+    ui->presetList->clear();
+    ui->presetList->addItems(presets);
+}
+
+void MainWindow::onPresetSelected(QListWidgetItem* item) {
+    if (item) {
+        ui->presetLineEdit->setText(item->text());
+    }
+}
+
 void MainWindow::on_activeButton_clicked() {
     QString rootDir = ui->rootLineEdit->text();
     QDir baseDir(rootDir);
@@ -279,9 +369,10 @@ void MainWindow::on_activeButton_clicked() {
     progress.setValue(itemsToProcess.size());
     QMessageBox::information(this, tr("Move Completed"),
                              tr("Items have been moved successfully."));
+
+    // After moving, repopulate the file list to reflect the changes.
+    populateFileList(m_firstDir, m_secondDir);
 }
-
-
 
 bool MainWindow::copyDirectory(const QString& sourcePath, const QString& destPath) {
     QDir sourceDir(sourcePath);
@@ -312,7 +403,7 @@ bool MainWindow::copyDirectory(const QString& sourcePath, const QString& destPat
     return true;
 }
 
-//Second Page code Below
+//Packs Page code Below
 
 QHash<QString, QString> loadFolderNameMappings(const QString &csvFilePath)
 {
@@ -488,8 +579,6 @@ void MainWindow::sortPacksListByCategory()
     }
 }
 
-
-
 QString MainWindow::getDisablePacksStringFromListWidget()
 {
     QStringList disableList;
@@ -600,6 +689,7 @@ void MainWindow::savePacksSelection()
     qDebug() << "Saved packs selection:" << selectedPacks;
 }
 
+//Close Event
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
@@ -614,5 +704,4 @@ MainWindow::~MainWindow()
 {
     delete ui;
 }
-
 
