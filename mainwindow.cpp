@@ -221,6 +221,9 @@ void MainWindow::loadPreset(const QString& presetName) {
             item->setCheckState(enabledItems.contains(item->text()) ? Qt::Checked : Qt::Unchecked);
         }
     }
+
+    // Run the activeButton function to move the checked items to the active directory
+    on_activeButton_clicked();
 }
 
 void MainWindow::on_presetDeleteButton_clicked()
@@ -243,6 +246,10 @@ void MainWindow::on_presetDeleteButton_clicked()
 void MainWindow::on_modsLoadButton_clicked()
 {
     // Get the selected preset name from the list widget
+    if (!ui->presetList->currentItem()) {
+        QMessageBox::warning(this, tr("Error"), tr("No preset selected."));
+        return;
+    }
     QString presetName = ui->presetList->currentItem()->text();
 
     // Load the preset using the existing load function
@@ -250,6 +257,37 @@ void MainWindow::on_modsLoadButton_clicked()
 
     // Optionally, you can also update the preset line edit to show the loaded preset name
     ui->presetLineEdit->setText(presetName);
+
+    // Error checking: Ensure all items from preset are present in the list widget
+    QSettings settings("Falcon", "SimsSwitcher");
+    QStringList enabledItems = settings.value("presets/" + presetName).toStringList();
+
+    QStringList missingItems;
+    for (const QString& presetItem : enabledItems) {
+        bool found = false;
+        for (int i = 0; i < ui->fileListWidget->count(); ++i) {
+            QListWidgetItem* item = ui->fileListWidget->item(i);
+            if ((item->flags() & Qt::ItemIsUserCheckable) && item->text() == presetItem) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            missingItems << presetItem;
+        }
+    }
+
+    if (!missingItems.isEmpty()) {
+        QMessageBox::warning(this, tr("Preset Load Warning"),
+                             tr("The following items from the preset were not found in the disabled or enabled mods:\n%1")
+                             .arg(missingItems.join(", ")));
+    }
+
+    // Ensure preset exists before loading
+    if (!settings.contains("presets/" + presetName)) {
+        QMessageBox::warning(this, tr("Error"), tr("Preset '%1' does not exist. Please create preset '%1' before trying to load it.").arg(presetName));
+        return;
+    }
 }
 
 void MainWindow::on_modsSaveButton_clicked()
@@ -267,6 +305,18 @@ void MainWindow::on_modsSaveButton_clicked()
 
     // Update the preset list in the UI
     updatePresetList();
+
+    // If the preset name exists, show an overwrite confirmation message
+    QSettings settings("Falcon", "SimsSwitcher");
+    if (settings.contains("presets/" + presetName)) {
+        QMessageBox::StandardButton reply;
+        reply = QMessageBox::question(this, tr("Preset Overwrite"),
+                                      tr("Preset '%1' already exists. Do you want to overwrite it?").arg(presetName),
+                                      QMessageBox::Yes | QMessageBox::No);
+        if (reply == QMessageBox::No) {
+            return; // User chose not to overwrite
+        }
+    }
 }
 
 void MainWindow::updatePresetList()
