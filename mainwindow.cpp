@@ -247,6 +247,9 @@ void MainWindow::on_modsLoadButton_clicked()
 
     // Load the preset using the existing load function
     loadPreset(presetName);
+
+    // Optionally, you can also update the preset line edit to show the loaded preset name
+    ui->presetLineEdit->setText(presetName);
 }
 
 void MainWindow::on_modsSaveButton_clicked()
