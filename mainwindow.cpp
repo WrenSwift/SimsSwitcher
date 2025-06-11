@@ -252,12 +252,6 @@ void MainWindow::on_modsLoadButton_clicked()
     }
     QString presetName = ui->presetList->currentItem()->text();
 
-    // Load the preset using the existing load function
-    loadPreset(presetName);
-
-    // Optionally, you can also update the preset line edit to show the loaded preset name
-    ui->presetLineEdit->setText(presetName);
-
     // Error checking: Ensure all items from preset are present in the list widget
     QSettings settings("Falcon", "SimsSwitcher");
     QStringList enabledItems = settings.value("presets/" + presetName).toStringList();
@@ -287,7 +281,13 @@ void MainWindow::on_modsLoadButton_clicked()
     if (!settings.contains("presets/" + presetName)) {
         QMessageBox::warning(this, tr("Error"), tr("Preset '%1' does not exist. Please create preset '%1' before trying to load it.").arg(presetName));
         return;
-    }
+    }   
+    
+    // Load the preset using the existing load function
+    loadPreset(presetName);
+
+    // Optionally, you can also update the preset line edit to show the loaded preset name
+    ui->presetLineEdit->setText(presetName);
 }
 
 void MainWindow::on_modsSaveButton_clicked()
