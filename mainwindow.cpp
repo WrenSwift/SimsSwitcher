@@ -300,12 +300,6 @@ void MainWindow::on_modsSaveButton_clicked()
         return;
     }
 
-    // Save the preset using the existing save function
-    savePreset(presetName);
-
-    // Update the preset list in the UI
-    updatePresetList();
-
     // If the preset name exists, show an overwrite confirmation message
     QSettings settings("Falcon", "SimsSwitcher");
     if (settings.contains("presets/" + presetName)) {
@@ -317,6 +311,13 @@ void MainWindow::on_modsSaveButton_clicked()
             return; // User chose not to overwrite
         }
     }
+    
+    // Save the preset using the existing save function
+    savePreset(presetName);
+
+    // Update the preset list in the UI
+    updatePresetList();
+
 }
 
 void MainWindow::updatePresetList()
