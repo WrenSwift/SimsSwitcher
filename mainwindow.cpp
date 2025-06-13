@@ -28,6 +28,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     updatePresetList();
+    updatePackPresetList(); // Initialize pack presets
 
     // Set the window title
     this->setWindowTitle("SimsSwitcher");
@@ -73,6 +74,10 @@ void MainWindow::on_menuMods_clicked(){
 
 void MainWindow::on_menuPacks_clicked(){
     ui->mainStackedWidget->setCurrentIndex(1);
+}
+
+void MainWindow::on_menuSettings_clicked(){
+    ui->mainStackedWidget->setCurrentIndex(2);
 }
 
 //Mods Page code Below
@@ -741,6 +746,104 @@ void MainWindow::savePacksSelection()
     QSettings settings("Falcon", "SimsSwitcher");
     settings.setValue("packsSelection", selectedPacks);
     qDebug() << "Saved packs selection:" << selectedPacks;
+}
+// --- Packs Preset Functionality ---
+QStringList MainWindow::packPresetList() {
+    QSettings settings("Falcon", "SimsSwitcher");
+    settings.beginGroup("packPresets");
+    QStringList keys = settings.childKeys();
+    settings.endGroup();
+    return keys;
+}
+
+void MainWindow::savePackPreset(const QString& presetName) {
+    QStringList enabledPacks;
+    for (int i = 0; i < ui->packsListWidget->count(); ++i) {
+        QListWidgetItem* item = ui->packsListWidget->item(i);
+        if ((item->flags() & Qt::ItemIsUserCheckable) && item->checkState() == Qt::Checked) {
+            // Store the original folder name for reliability
+            QString originalName = item->data(Qt::UserRole + 1).toString();
+            enabledPacks << originalName;
+        }
+    }
+    QSettings settings("Falcon", "SimsSwitcher");
+    settings.setValue("packPresets/" + presetName, enabledPacks);
+}
+
+void MainWindow::loadPackPreset(const QString& presetName) {
+    QSettings settings("Falcon", "SimsSwitcher");
+    QStringList enabledPacks = settings.value("packPresets/" + presetName).toStringList();
+    for (int i = 0; i < ui->packsListWidget->count(); ++i) {
+        QListWidgetItem* item = ui->packsListWidget->item(i);
+        if (item->flags() & Qt::ItemIsUserCheckable) {
+            QString originalName = item->data(Qt::UserRole + 1).toString();
+            item->setCheckState(enabledPacks.contains(originalName) ? Qt::Checked : Qt::Unchecked);
+        }
+    }
+}
+
+void MainWindow::updatePackPresetList() {
+    QStringList presets = packPresetList();
+    ui->presetPackList->clear();
+    ui->presetPackList->addItems(presets);
+}
+
+void MainWindow::on_launchSaveButton_clicked() {
+    QString presetName = ui->presetPackLineEdit->text().trimmed();
+    if (presetName.isEmpty()) {
+        QMessageBox::warning(this, tr("Error"), tr("Pack preset name cannot be empty."));
+        return;
+    }
+    QSettings settings("Falcon", "SimsSwitcher");
+    if (settings.contains("packPresets/" + presetName)) {
+        QMessageBox::StandardButton reply;
+        reply = QMessageBox::question(this, tr("Preset Overwrite"),
+                                      tr("Pack preset '%1' already exists. Do you want to overwrite it?").arg(presetName),
+                                      QMessageBox::Yes | QMessageBox::No);
+        if (reply == QMessageBox::No) {
+            return;
+        }
+    }
+    savePackPreset(presetName);
+    updatePackPresetList();
+}
+
+void MainWindow::on_packsLoadButton_clicked() {
+    if (!ui->presetPackList->currentItem()) {
+        QMessageBox::warning(this, tr("Error"), tr("No pack preset selected."));
+        return;
+    }
+    QString presetName = ui->presetPackList->currentItem()->text();
+    QSettings settings("Falcon", "SimsSwitcher");
+    if (!settings.contains("packPresets/" + presetName)) {
+        QMessageBox::warning(this, tr("Error"), tr("Pack preset '%1' does not exist.").arg(presetName));
+        return;
+    }
+    loadPackPreset(presetName);
+    ui->presetPackLineEdit->setText(presetName);
+}
+
+void MainWindow::on_presetPackDeleteButton_clicked() {
+    if (!ui->presetPackList->currentItem()) {
+        QMessageBox::warning(this, tr("Error"), tr("No pack preset selected."));
+        return;
+    }
+    QString presetName = ui->presetPackList->currentItem()->text();
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, tr("Delete Pack Preset"),
+                                  tr("Are you sure you want to delete the pack preset '%1'?").arg(presetName),
+                                  QMessageBox::Yes | QMessageBox::No);
+    if (reply == QMessageBox::Yes) {
+        QSettings settings("Falcon", "SimsSwitcher");
+        settings.remove("packPresets/" + presetName);
+        updatePackPresetList();
+    }
+}
+
+void MainWindow::onPackPresetSelected(QListWidgetItem* item) {
+    if (item) {
+        ui->presetPackLineEdit->setText(item->text());
+    }
 }
 
 //Close Event

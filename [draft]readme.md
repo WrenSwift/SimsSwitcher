@@ -1,7 +1,7 @@
 # SimsSwitcher
-v0.2.0
+v.0.3.0
 
-**SimsSwitcher** is a Windows desktop application for managing The Sims 4 mods and packs. It allows you to easily enable/disable mods, create and switch between presets, and launch the game with custom pack selections.
+**SimsSwitcher** is a Windows desktop application for managing The Sims 4 mods and packs. It allows you to easily enable/disable mods, create and switch between presets for both mods and packs, and launch the game with custom pack selections.
 
 ---
 
@@ -10,17 +10,20 @@ v0.2.0
 - **Enable/Disable Mods:**  
   Quickly move mods between active and inactive folders.
 
-- **Presets:**  
+- **Mod Presets:**  
   Save and load sets of enabled mods as named presets for different play styles or testing setups.
 
 - **Packs Management:**  
   View, enable, or disable Sims 4 packs using friendly names loaded from a CSV file.
 
+- **Pack Presets:**  
+  Save and load sets of enabled packs as named presets, making it easy to switch between different pack configurations.
+
 - **Game Launcher:**  
   Launch The Sims 4 directly from the app, with optional arguments to disable selected packs.
 
 - **Persistent Settings:**  
-  Remembers your last used directories and presets between sessions.
+  Remembers your last used directories, mod presets, and pack presets between sessions.
 
 ---
 
@@ -44,23 +47,30 @@ No installation is required. If you encounter issues running the app, ensure you
 
 ## Usage
 
-1. **Select Sims 4 Root Directory:**  
-   Click "Browse" and choose your Sims 4 mods folder.
+1. **Select Sims 4 Data Directory:**  
+   Go to the Settings tab and click "Browse..." to choose your Sims 4 data directory.
 
-2. **Enable/Disable Mods:**  
-   Use the checkboxes to select which mods are active. Use "Select All" or "Deselect All" for convenience.
+2. **Select Sims 4 Install Directory:**  
+   In the Settings tab, click "Browse..." to choose your Sims 4 install directory.
 
-3. **Presets:**  
-   - Save your current selection as a preset by entering a name and clicking "Save Preset".
+3. **Enable/Disable Mods:**  
+   Use the checkboxes in the Mods tab to select which mods are active. Use "Select All" or "Deselect All" for convenience.
+
+4. **Mod Presets:**  
+   - Save your current mod selection as a preset by entering a name and clicking "Save Preset".
    - Load a preset by selecting it from the list and clicking "Load Preset".
    - Delete a preset with the "Delete" button.
 
-4. **Packs Management:**  
-   - Select your Sims 4 install directory.
-   - Enable/disable packs using the checkboxes. Friendly names are loaded from `inc/packsDil.csv`.
+5. **Enable/Disable Packs:**  
+   Use the checkboxes in the Packs tab to select which packs are enabled. Use "Select All" or "Deselect All" for convenience.
 
-5. **Launch Game:**  
-   Click "Launch" to start The Sims 4 with your selected packs and mods.
+6. **Pack Presets:**  
+   - Save your current pack selection as a preset by entering a name and clicking "Save Preset".
+   - Load a preset by selecting it from the list and clicking "Load Preset".
+   - Delete a preset with the "Delete" button.
+
+7. **Launch Game:**  
+   Click "Launch with selected packs" to start The Sims 4 with your selected packs and mods.
 
 ---
 
@@ -81,6 +91,9 @@ No installation is required. If you encounter issues running the app, ensure you
 
 - **CSV file not found:**  
   Make sure `inc/packsDil.csv` is present.
+
+- **UI elements missing or not working:**  
+  Ensure you are using the latest version and that all files from the release are present.
 
 ---
 

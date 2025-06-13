@@ -236,8 +236,8 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QPushButton" name="launchButton">
       <property name="geometry">
        <rect>
-        <x>50</x>
-        <y>470</y>
+        <x>40</x>
+        <y>440</y>
         <width>191</width>
         <height>24</height>
        </rect>
@@ -252,7 +252,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <x>10</x>
         <y>20</y>
         <width>291</width>
-        <height>141</height>
+        <height>131</height>
        </rect>
       </property>
       <property name="html">
@@ -296,8 +296,8 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QPushButton" name="presetPackDeleteButton">
       <property name="geometry">
        <rect>
-        <x>200</x>
-        <y>170</y>
+        <x>190</x>
+        <y>160</y>
         <width>75</width>
         <height>20</height>
        </rect>
@@ -306,11 +306,11 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <string>Delete</string>
       </property>
      </widget>
-     <widget class="QListWidget" name="presetList_3">
+     <widget class="QListWidget" name="presetPackList">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>190</y>
+        <x>10</x>
+        <y>180</y>
         <width>256</width>
         <height>131</height>
        </rect>
@@ -319,8 +319,8 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QLineEdit" name="presetPackLineEdit">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>350</y>
+        <x>10</x>
+        <y>340</y>
         <width>251</width>
         <height>24</height>
        </rect>
@@ -329,8 +329,8 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QPushButton" name="launchSaveButton">
       <property name="geometry">
        <rect>
-        <x>50</x>
-        <y>380</y>
+        <x>40</x>
+        <y>370</y>
         <width>80</width>
         <height>24</height>
        </rect>
@@ -342,8 +342,8 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QPushButton" name="packsLoadButton">
       <property name="geometry">
        <rect>
-        <x>160</x>
-        <y>380</y>
+        <x>150</x>
+        <y>370</y>
         <width>80</width>
         <height>24</height>
        </rect>
@@ -355,8 +355,8 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QLabel" name="label_9">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>170</y>
+        <x>10</x>
+        <y>160</y>
         <width>111</width>
         <height>16</height>
        </rect>
@@ -368,8 +368,8 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QLabel" name="label_10">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>330</y>
+        <x>10</x>
+        <y>320</y>
         <width>111</width>
         <height>16</height>
        </rect>

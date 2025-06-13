@@ -36,6 +36,11 @@ private slots:
     void on_modsLoadButton_clicked();
     void onPresetSelected(QListWidgetItem* item);
     void on_presetDeleteButton_clicked();
+    void on_launchSaveButton_clicked();
+    void on_packsLoadButton_clicked();
+    void on_presetPackDeleteButton_clicked();
+    void onPackPresetSelected(QListWidgetItem* item);
+    void on_menuSettings_clicked();
 
 private:
     Ui::SimsSwitcher *ui;
@@ -49,5 +54,9 @@ private:
     void savePreset(const QString& presetName);
     void loadPreset(const QString& presetName);
     void updatePresetList();
+    QStringList packPresetList();
+    void savePackPreset(const QString& presetName);
+    void loadPackPreset(const QString& presetName);
+    void updatePackPresetList();
 };
 #endif // MAINWINDOW_H
