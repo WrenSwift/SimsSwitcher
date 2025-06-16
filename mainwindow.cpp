@@ -17,7 +17,7 @@
 #include <QProcess>
 #include <QCloseEvent>
 
-QString acitveSubDirName = "Mods"; // Change this to your desired subdirectory
+QString activeSubDirName = "Mods"; // Change this to your desired subdirectory
 QString disabledSubDirName = "(d)Mods"; // Change this to your desired subdirectory
 QString csvFilePath = "inc/packsDil.csv";
 
@@ -53,7 +53,7 @@ MainWindow::MainWindow(QWidget *parent)
     QDir baseDir(cachedSource);
 
     // Append the subdirectory using QDir::filePath to get a platform-appropriate path.
-    QString activeModsPath = baseDir.filePath(acitveSubDirName);
+    QString activeModsPath = baseDir.filePath(activeSubDirName);
     QString disabledModsPath = baseDir.filePath(disabledSubDirName);
 
     if (!cachedSource.isEmpty()) {
@@ -92,13 +92,13 @@ void MainWindow::on_browseRootButton_clicked() {
         QDir baseDir(rootDir);
 
         // Append the subdirectory using QDir::filePath to get a platform-appropriate path.
-        QString activeModsPath = baseDir.filePath(acitveSubDirName);
+        QString activeModsPath = baseDir.filePath(activeSubDirName);
         QString disabledModsPath = baseDir.filePath(disabledSubDirName);
 
         // Optionally, create the subdirectory if it does not already exist.
-        if (!baseDir.exists(acitveSubDirName)) {
-            if (!baseDir.mkpath(acitveSubDirName)) {
-                QMessageBox::warning(this, tr("Error"), tr("Failed to create subdirectory: %1").arg(acitveSubDirName));
+        if (!baseDir.exists(activeSubDirName)) {
+            if (!baseDir.mkpath(activeSubDirName)) {
+                QMessageBox::warning(this, tr("Error"), tr("Failed to create subdirectory: %1").arg(activeSubDirName));
                 return;
             }
         }
@@ -234,6 +234,10 @@ void MainWindow::loadPreset(const QString& presetName) {
 void MainWindow::on_presetDeleteButton_clicked()
 {
     // Get the selected preset name from the list widget
+    if (!ui->presetList->currentItem()) {
+        QMessageBox::warning(this, tr("Error"), tr("No preset selected."));
+        return;
+    }
     QString presetName = ui->presetList->currentItem()->text();
 
     // Confirm deletion with the user
@@ -341,7 +345,7 @@ void MainWindow::onPresetSelected(QListWidgetItem* item) {
 void MainWindow::on_activeButton_clicked() {
     QString rootDir = ui->rootLineEdit->text();
     QDir baseDir(rootDir);
-    QString m_firstDir = baseDir.filePath(acitveSubDirName);
+    QString m_firstDir = baseDir.filePath(activeSubDirName);
     QString m_secondDir = baseDir.filePath(disabledSubDirName);
 
     // Verify that these directories have been set.
@@ -860,4 +864,5 @@ void MainWindow::closeEvent(QCloseEvent *event)
 MainWindow::~MainWindow()
 {
     delete ui;
+    ui = nullptr;
 }
