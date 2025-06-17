@@ -239,11 +239,21 @@ void MainWindow::populateFileList(const QString& firstDir, const QString& second
         QFileInfoList fileList = dir.entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries);
 
         if (!fileList.isEmpty()) {
-            // Optionally add a header item to indicate which directory these files are coming from.
-            QListWidgetItem* headerItem = new QListWidgetItem("Items from: " + dirPath);
+            // Determine a friendly header based on which directory this is
+            QString friendlyHeader;
+            if (dirPath.endsWith("/" + activeSubDirName) || dirPath.endsWith("\\" + activeSubDirName)) {
+            friendlyHeader = "Active Mods";
+            } else if (dirPath.endsWith("/" + disabledSubDirName) || dirPath.endsWith("\\" + disabledSubDirName)) {
+            friendlyHeader = "Disabled Mods";
+            } else {
+            friendlyHeader = "Items from: " + dirPath;
+            }
+            QListWidgetItem* headerItem = new QListWidgetItem(friendlyHeader);
             // Make the header non-checkable
             headerItem->setFlags(headerItem->flags() & ~Qt::ItemIsUserCheckable);
             headerItem->setBackground(Qt::darkGreen);
+            // Set the tooltip to show the full path on hover
+            headerItem->setToolTip(dirPath);
             ui->fileListWidget->addItem(headerItem);
         }
 
