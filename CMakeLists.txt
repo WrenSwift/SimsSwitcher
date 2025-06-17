@@ -7,7 +7,7 @@ set(CMAKE_PREFIX_PATH
 
 project(SimsSwitcher LANGUAGES CXX)
 
-find_package(Qt6 6.8.3 REQUIRED COMPONENTS Core Widgets LinguistTools)
+find_package(Qt6 6.8.3 REQUIRED COMPONENTS Core Widgets Network LinguistTools)
 
 qt_standard_project_setup()
 
@@ -21,7 +21,7 @@ add_executable(SimsSwitcher
 )
 
 target_link_libraries(SimsSwitcher
-    PRIVATE Qt6::Core Qt6::Widgets
+    PRIVATE Qt6::Core Qt6::Widgets Qt6::Network
 )
 
 add_custom_command(

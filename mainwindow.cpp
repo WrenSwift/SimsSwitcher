@@ -16,10 +16,16 @@
 #include <QStandardItemModel>
 #include <QProcess>
 #include <QCloseEvent>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QByteArray>
 
 QString activeSubDirName = "Mods"; // Change this to your desired subdirectory
 QString disabledSubDirName = "(d)Mods"; // Change this to your desired subdirectory
 QString csvFilePath = "inc/packsDil.csv";
+QString version = "0.3.0"; // Version of the application
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -29,6 +35,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     updatePresetList();
     updatePackPresetList(); // Initialize pack presets
+    doVersionCheck();
 
     // Set the window title
     this->setWindowTitle("SimsSwitcher");
@@ -66,6 +73,79 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     qDebug() << "Resource exists:" << QFile::exists(":/inc/packsDil.csv");
+}
+
+void MainWindow::doVersionCheck() {
+    ui->verLabel->setText("Version: " + version);
+    // Check the latest release version from GitHub
+    QNetworkAccessManager manager;
+    QEventLoop loop;
+    QNetworkReply *reply = manager.get(QNetworkRequest(QUrl("https://api.github.com/repos/WrenSwift/SimsSwitcher/releases/latest")));
+    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    loop.exec();
+
+    if (reply->error() == QNetworkReply::NoError) {
+        QByteArray response = reply->readAll();
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(response);
+        if (jsonDoc.isObject()) {
+            QString latestTag = jsonDoc.object().value("tag_name").toString();
+
+            // Helper lambda to parse version string "x.y.z" into a list of ints
+            auto parseVersion = [](const QString& ver) -> QList<int> {
+                QStringList parts = ver.split('.');
+                QList<int> nums;
+                for (const QString& part : parts) {
+                    bool ok = false;
+                    int n = part.toInt(&ok);
+                    nums << (ok ? n : 0);
+                }
+                while (nums.size() < 3) nums << 0; // pad to 3 parts
+                return nums;
+            };
+
+            if (!latestTag.isEmpty()) {
+                QList<int> latestParts = parseVersion(latestTag);
+                QList<int> localParts = parseVersion(version);
+
+                bool isNewer = false;
+                for (int i = 0; i < 3; ++i) {
+                    if (latestParts[i] > localParts[i]) {
+                        isNewer = true;
+                        break;
+                    } else if (latestParts[i] < localParts[i]) {
+                        break;
+                    }
+                }
+
+                if (isNewer) {
+                    QString downloadUrl = jsonDoc.object().value("html_url").toString();
+                    QString message = QString("A new version is available: %1\nYou are running: %2").arg(latestTag, version);
+                    if (!downloadUrl.isEmpty()) {
+                        message += QString("<br><br>Get the latest version here: <a href=\"%1\">%1</a>").arg(downloadUrl);
+                    }
+                    // Use rich text and enable links in the QMessageBox
+                    QMessageBox msgBox;
+                    msgBox.setWindowTitle("Update Available");
+                    msgBox.setTextFormat(Qt::RichText);
+                    msgBox.setText(message);
+                    msgBox.setTextInteractionFlags(Qt::TextBrowserInteraction);
+                    msgBox.setIcon(QMessageBox::Warning);
+                    msgBox.exec();
+                    return;
+                    QMessageBox::warning(nullptr, "Update Available", message);
+                } else {
+                    qDebug() << "Version check passed.";
+                }
+                } else {
+                    qDebug() << "Version tag is empty.";
+                }
+            } else {
+                qDebug() << "Failed to parse GitHub response.";
+            }
+        } else {
+            qDebug() << "Failed to fetch latest release info:" << reply->errorString();
+        }
+        reply->deleteLater();
 }
 
 void MainWindow::on_menuMods_clicked(){

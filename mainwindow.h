@@ -58,5 +58,6 @@ private:
     void savePackPreset(const QString& presetName);
     void loadPackPreset(const QString& presetName);
     void updatePackPresetList();
+    void doVersionCheck();
 };
 #endif // MAINWINDOW_H

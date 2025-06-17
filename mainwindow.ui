@@ -525,6 +525,19 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <string>Settings</string>
     </property>
    </widget>
+   <widget class="QLabel" name="verLabel">
+    <property name="geometry">
+     <rect>
+      <x>618</x>
+      <y>10</y>
+      <width>161</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
