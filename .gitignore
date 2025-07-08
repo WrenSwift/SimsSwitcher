@@ -81,5 +81,6 @@ CMakeLists.txt.user*
 .uic/
 /build*/
 
-#buildCommand File
+#buildCommand Files
 buildCommand.txt
+buildCommand.bat
