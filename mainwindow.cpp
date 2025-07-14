@@ -38,6 +38,7 @@ MainWindow::MainWindow(QWidget *parent)
     updatePresetList();
     updatePackPresetList(); // Initialize pack presets
     doVersionCheck();
+    do_patreonLink();
 
     // Set the window title
     this->setWindowTitle("SimsSwitcher");
@@ -78,7 +79,12 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 void MainWindow::doVersionCheck() {
-    ui->verLabel->setText("Version: " + version);
+    // Set the version label with a hyperlink to the release page
+    QString releaseUrl = "https://github.com/WrenSwift/SimsSwitcher/releases/tag/" + version;
+    ui->verLabel->setText(QString("<a href=\"%1\">Version: %2</a>").arg(releaseUrl, version));
+    ui->verLabel->setTextFormat(Qt::RichText);
+    ui->verLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    ui->verLabel->setOpenExternalLinks(true);
     // Check the latest release version from GitHub
     QNetworkAccessManager manager;
     QEventLoop loop;
@@ -1033,6 +1039,12 @@ void MainWindow::on_importButton_clicked()
         QMessageBox::warning(this, tr("Import Failed"),
                              tr("No valid presets were imported."));
     }
+}
+
+void MainWindow::do_patreonLink()
+{
+    ui->settingsTextBrowser->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    ui->settingsTextBrowser->setOpenExternalLinks(true);
 }
 
 //Close Event

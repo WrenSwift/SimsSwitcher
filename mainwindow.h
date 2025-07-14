@@ -61,5 +61,6 @@ private:
     void loadPackPreset(const QString& presetName);
     void updatePackPresetList();
     void doVersionCheck();
+    void do_patreonLink();
 };
 #endif // MAINWINDOW_H
