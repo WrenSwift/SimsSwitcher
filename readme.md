@@ -1,7 +1,26 @@
 # SimsSwitcher
-v0.3.0
+v1.0.0
 
-**SimsSwitcher** is a Windows desktop application for managing The Sims 4 mods and packs. It allows you to easily enable/disable mods, create and switch between presets for both mods and packs, and launch the game with custom pack selections.
+**SimsSwitcher** is a Windows desktop application for managing The Sims 4 mods and packs. It allows you to easily enable/disable mods, create and switch between presets for both mods and packs, export/import presets, and launch the game with custom pack selections.
+
+---
+
+## What's New in 1.0.0
+
+- **Export/Import Presets:**  
+  Export your mod and pack presets as individual JSON files, and optionally export all mods from a preset as a ZIP archive. Import presets on any device running SimsSwitcher.
+- **Bulk Export:**  
+  Select multiple presets for export at once, with progress feedback.
+- **Multi-Select Preset Lists:**  
+  Easily select multiple mod or pack presets for export or deletion.
+- **Improved Duplicate Detection:**  
+  The app now warns you if the same mod exists in both active and disabled folders, helping prevent mod conflicts.
+- **Progress Bar for Export:**  
+  Visual feedback during export operations.
+- **UI Improvements:**  
+  More robust error handling, clearer warnings, and improved workflow for managing and exporting presets.
+- **Bug Fixes and Stability:**  
+  Many fixes and refinements for a smoother experience.
 
 ---
 
@@ -18,6 +37,9 @@ v0.3.0
 
 - **Pack Presets:**  
   Save and load sets of enabled packs as named presets, making it easy to switch between different pack configurations.
+
+- **Export/Import Presets:**  
+  Export mod and pack presets as individual JSON files, and import them on another device. Optionally export all mods from a preset as a ZIP archive.
 
 - **Game Launcher:**  
   Launch The Sims 4 directly from the app, with optional arguments to disable selected packs.
@@ -69,7 +91,11 @@ No installation is required. If you encounter issues running the app, ensure you
    - Load a preset by selecting it from the list and clicking "Load Preset".
    - Delete a preset with the "Delete" button.
 
-7. **Launch Game:**  
+7. **Export/Import Presets:**  
+   - Click "Export" to open the export wizard, select one or more presets, and export them as JSON (and optionally ZIP) files.
+   - Click "Import" to select one or more preset files and add them to your SimsSwitcher.
+
+8. **Launch Game:**  
    Click "Launch with selected packs" to start The Sims 4 with your selected packs and mods.
 
 ---
@@ -77,6 +103,7 @@ No installation is required. If you encounter issues running the app, ensure you
 ## File Structure
 
 - `mainwindow.cpp` / `mainwindow.h` — Main application logic and UI.
+- `exportwindow.cpp` / `exportwindow.h` — Export/import wizard logic.
 - `resources.qrc` — Qt resource file (icons, CSV).
 - `inc/packsDil.csv` — CSV mapping for pack names.
 - `icons/` — Application icons.
@@ -95,6 +122,9 @@ No installation is required. If you encounter issues running the app, ensure you
 - **UI elements missing or not working:**  
   Ensure you are using the latest version and that all files from the release are present.
 
+- **Duplicate Mods Warning:**  
+  If you see a warning about mods existing in both active and disabled folders, resolve the duplicates to avoid conflicts.
+
 ---
 
 ## License
@@ -106,6 +136,4 @@ MIT License
 ## Credits
 
 - Developed by WrenSwift
-- Uses [Qt](https://www.qt.io/) for the UI framework
-
----
+- Uses [Qt](https://www.qt.io/)
