@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "exportwindow.h" // Add this include at the top if not already present
 #include <QFileDialog>
 #include <QDir>
 #include <QMessageBox>
@@ -21,11 +22,12 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QByteArray>
+#include <QJsonArray>
 
 QString activeSubDirName = "Mods"; // Change this to your desired subdirectory
 QString disabledSubDirName = "(d)Mods"; // Change this to your desired subdirectory
 QString csvFilePath = "inc/packsDil.csv";
-QString version = "0.3.0"; // Version of the application
+QString version = "1.0.0"; // Version of the application
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -232,6 +234,37 @@ void MainWindow::on_fileDeselectAllButton_clicked()
 void MainWindow::populateFileList(const QString& firstDir, const QString& secondDir) {
     ui->fileListWidget->clear();
 
+    // Gather file/folder names from both directories to check for duplicates
+    QDir dirFirst(firstDir);
+    QDir dirSecond(secondDir);
+
+    QSet<QString> firstNames;
+    QSet<QString> secondNames;
+
+    // Collect names from firstDir (Mods)
+    QFileInfoList firstList = dirFirst.entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries);
+    for (const QFileInfo& fileInfo : firstList) {
+        firstNames.insert(fileInfo.fileName());
+    }
+
+    // Collect names from secondDir ((d)Mods)
+    QFileInfoList secondList = dirSecond.entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries);
+    for (const QFileInfo& fileInfo : secondList) {
+        secondNames.insert(fileInfo.fileName());
+    }
+
+    // Find duplicates
+    QSet<QString> duplicates = firstNames & secondNames;
+    if (!duplicates.isEmpty()) {
+        QStringList duplicateList = duplicates.values();
+        QString msg = tr(
+            "Warning: The following files or folders exist in both '%1' and '%2':\n\n%3\n\n"
+            "This can cause issues with mod management. Please delete or move the duplicates from the incorrect location."
+        ).arg(activeSubDirName, disabledSubDirName, duplicateList.join("\n"));
+
+        QMessageBox::warning(this, tr("Duplicate Mods Detected"), msg);
+    }
+
     // A helper lambda that takes a directory path and a flag indicating if the items should be pre-checked.
     auto addDirectoryItems = [this](const QString &dirPath, bool preChecked) {
         QDir dir(dirPath);
@@ -242,11 +275,11 @@ void MainWindow::populateFileList(const QString& firstDir, const QString& second
             // Determine a friendly header based on which directory this is
             QString friendlyHeader;
             if (dirPath.endsWith("/" + activeSubDirName) || dirPath.endsWith("\\" + activeSubDirName)) {
-            friendlyHeader = "Active Mods";
+                friendlyHeader = "Active Mods";
             } else if (dirPath.endsWith("/" + disabledSubDirName) || dirPath.endsWith("\\" + disabledSubDirName)) {
-            friendlyHeader = "Disabled Mods";
+                friendlyHeader = "Disabled Mods";
             } else {
-            friendlyHeader = "Items from: " + dirPath;
+                friendlyHeader = "Items from: " + dirPath;
             }
             QListWidgetItem* headerItem = new QListWidgetItem(friendlyHeader);
             // Make the header non-checkable
@@ -274,7 +307,6 @@ void MainWindow::populateFileList(const QString& firstDir, const QString& second
 
             // Optional: For debugging, print the full path.
             qDebug() << "Added item:" << displayName << "with full path:" << fullPath;
-
             ui->fileListWidget->addItem(item);
         }
     };
@@ -284,7 +316,6 @@ void MainWindow::populateFileList(const QString& firstDir, const QString& second
 
     // Process the second directory: files will be unchecked.
     addDirectoryItems(secondDir, false);
-
 }
 
 QStringList MainWindow::presetList() {
@@ -374,6 +405,7 @@ void MainWindow::on_modsLoadButton_clicked()
         QMessageBox::warning(this, tr("Preset Load Warning"),
                              tr("The following items from the preset were not found in the disabled or enabled mods:\n%1")
                              .arg(missingItems.join(", ")));
+                             tr("Please ensure that all items in the preset are present in the list before loading. If a new version has been added, please update the preset.");
     }
 
     // Ensure preset exists before loading
@@ -937,6 +969,69 @@ void MainWindow::on_presetPackDeleteButton_clicked() {
 void MainWindow::onPackPresetSelected(QListWidgetItem* item) {
     if (item) {
         ui->presetPackLineEdit->setText(item->text());
+    }
+}
+
+//Settings page code below
+
+void MainWindow::on_exportButton_clicked()
+{
+    qDebug() << "Export button clicked, opening ExportWindow.";
+    ExportWindow exportWizard(this);
+    exportWizard.exec();
+}
+
+void MainWindow::on_importButton_clicked()
+{
+    // Open a file dialog for selecting one or more preset files to import
+    QStringList fileNames = QFileDialog::getOpenFileNames(
+        this,
+        tr("Import Preset Files"),
+        QString(),
+        tr("Preset Files (*.json)")
+    );
+
+    if (fileNames.isEmpty())
+        return;
+
+    QSettings settings("Falcon", "SimsSwitcher");
+    int importedCount = 0;
+    for (const QString& filePath : fileNames) {
+        QFile file(filePath);
+        if (!file.open(QIODevice::ReadOnly))
+            continue;
+
+        QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+        file.close();
+        if (!doc.isObject())
+            continue;
+
+        QJsonObject obj = doc.object();
+        QString type = obj.value("type").toString();
+        QString name = obj.value("name").toString();
+        QJsonArray itemsArray = obj.value("items").toArray();
+        QStringList items;
+        for (const QJsonValue& v : itemsArray)
+            items << v.toString();
+
+        if (type == "modPreset" && !name.isEmpty()) {
+            settings.setValue("presets/" + name, items);
+            ++importedCount;
+        } else if (type == "packPreset" && !name.isEmpty()) {
+            settings.setValue("packPresets/" + name, items);
+            ++importedCount;
+        }
+    }
+
+    updatePresetList();
+    updatePackPresetList();
+
+    if (importedCount > 0) {
+        QMessageBox::information(this, tr("Import Complete"),
+                                 tr("Successfully imported %1 preset(s).").arg(importedCount));
+    } else {
+        QMessageBox::warning(this, tr("Import Failed"),
+                             tr("No valid presets were imported."));
     }
 }
 

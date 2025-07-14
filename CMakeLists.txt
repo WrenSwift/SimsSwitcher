@@ -13,6 +13,8 @@ qt_standard_project_setup()
 
 add_executable(SimsSwitcher
     WIN32
+    exportwindow.cpp
+    exportwindow.ui
     mainwindow.cpp
     mainwindow.ui
     main.cpp
