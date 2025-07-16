@@ -162,6 +162,7 @@ void MainWindow::on_menuMods_clicked(){
 
 void MainWindow::on_menuPacks_clicked(){
     ui->mainStackedWidget->setCurrentIndex(1);
+    do_S4MPCheck();
 }
 
 void MainWindow::on_menuSettings_clicked(){
@@ -595,6 +596,28 @@ bool MainWindow::copyDirectory(const QString& sourcePath, const QString& destPat
 }
 
 //Packs Page code Below
+
+void MainWindow::do_S4MPCheck() {
+    // Check for "S4MP Launcher Windows.exe" in active mods.
+    QString s4mpExeName = "S4MP Launcher Windows.exe";
+    bool foundS4MP = false;
+
+    // Get the active mods directory from the root directory.
+    QString rootDir = ui->rootLineEdit->text();
+    QDir baseDir(rootDir);
+    QString activeModsPath = baseDir.filePath(activeSubDirName);
+
+    // Check if the S4MP executable exists in the active mods directory.
+    if (QFile::exists(activeModsPath + "/" + s4mpExeName)) {
+        foundS4MP = true;
+    }
+
+    if (foundS4MP) {
+        QMessageBox::warning(this, tr("S4MP Detected"),
+            tr("\"S4MP Launcher Windows.exe\" is present in your active mods. "
+               "If you plan to use S4MP please use their launcher for pack selection after desired mods are selected."));
+    }
+}
 
 QHash<QString, QString> loadFolderNameMappings(const QString &csvFilePath)
 {

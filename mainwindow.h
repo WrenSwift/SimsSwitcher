@@ -62,5 +62,6 @@ private:
     void updatePackPresetList();
     void doVersionCheck();
     void do_patreonLink();
+    void do_S4MPCheck();
 };
 #endif // MAINWINDOW_H
