@@ -41,6 +41,8 @@ private slots:
     void on_presetPackDeleteButton_clicked();
     void onPackPresetSelected(QListWidgetItem* item);
     void on_menuSettings_clicked();
+    void on_exportButton_clicked();
+    void on_importButton_clicked();
 
 private:
     Ui::SimsSwitcher *ui;
@@ -59,5 +61,7 @@ private:
     void loadPackPreset(const QString& presetName);
     void updatePackPresetList();
     void doVersionCheck();
+    void do_patreonLink();
+    void do_S4MPCheck();
 };
 #endif // MAINWINDOW_H
