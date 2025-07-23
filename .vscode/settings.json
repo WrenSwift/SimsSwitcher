@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "qmainwindow": "cpp"
+        "qmainwindow": "cpp",
+        "qstandarditemmodel": "cpp"
     }
 }

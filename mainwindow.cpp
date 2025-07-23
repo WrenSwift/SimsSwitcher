@@ -23,11 +23,13 @@
 #include <QJsonObject>
 #include <QByteArray>
 #include <QJsonArray>
+#include <QEventLoop>
 
-QString activeSubDirName = "Mods"; // Change this to your desired subdirectory
+QString activeSubDirName = "Mods"; // This is where the active mods are stored
 QString disabledSubDirName = "(d)Mods"; // Change this to your desired subdirectory
 QString csvFilePath = "inc/packsDil.csv";
-QString version = "1.0.0"; // Version of the application
+QString csvCloudPath = "https://wrenswift.com/packsDil.csv";
+QString version = "1.1.0"; // Version of the application
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -72,7 +74,7 @@ MainWindow::MainWindow(QWidget *parent)
     }
     if (!cachedGameSource.isEmpty()) {
         ui->gameLineEdit->setText(cachedGameSource);
-        populatePacksListWidget(cachedGameSource,csvFilePath);
+        loadPacksCsv(csvCloudPath, csvFilePath);
     }
 
     qDebug() << "Resource exists:" << QFile::exists(":/inc/packsDil.csv");
@@ -154,6 +156,65 @@ void MainWindow::doVersionCheck() {
             qDebug() << "Failed to fetch latest release info:" << reply->errorString();
         }
         reply->deleteLater();
+}
+
+void MainWindow::loadPacksCsv(const QString &url, const QString &localPath)
+{
+    QNetworkAccessManager manager;
+    QEventLoop loop;
+    QNetworkReply *reply = manager.get(QNetworkRequest(QUrl(url)));
+    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    loop.exec();
+
+    QByteArray csvData;
+    bool usedNetwork = false;
+
+    if (reply->error() == QNetworkReply::NoError) {
+        csvData = reply->readAll();
+        usedNetwork = true;
+        // Save the latest network version locally for future offline use
+        QFile localFile(localPath);
+        if (localFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            localFile.write(csvData);
+            localFile.close();
+        }
+    } else {
+        // Network failed, try to load from local file
+        QFile localFile(localPath);
+        if (localFile.open(QIODevice::ReadOnly)) {
+            csvData = localFile.readAll();
+            localFile.close();
+            QMessageBox::warning(this, tr("Network Error"),
+                tr("Failed to download packs CSV from the cloud. Using local backup copy instead."));
+        } else {
+            QMessageBox::warning(this, tr("Error"),
+                tr("Failed to download packs CSV and no local backup is available: %1").arg(reply->errorString()));
+            reply->deleteLater();
+            return;
+        }
+    }
+    reply->deleteLater();
+
+    // Parse CSV data (same as before)
+    QHash<QString, QString> folderMapping;
+    QTextStream in(csvData);
+    bool firstLine = true;
+    while (!in.atEnd()) {
+        QString line = in.readLine().trimmed();
+        if (line.isEmpty())
+            continue;
+        if (firstLine) {
+            firstLine = false;
+            // continue; // Uncomment if your CSV has a header
+        }
+        QStringList parts = line.split(',');
+        if (parts.size() >= 2) {
+            QString originalName = parts.at(0).trimmed();
+            QString friendlyName = parts.at(1).trimmed();
+            folderMapping.insert(originalName, friendlyName);
+        }
+    }
+    populatePacksListWidgetWithMapping(ui->gameLineEdit->text(), folderMapping);
 }
 
 void MainWindow::on_menuMods_clicked(){
@@ -742,6 +803,36 @@ void MainWindow::populatePacksListWidget(const QString &folderPath, const QStrin
     sortPacksListByCategory();
 }
 
+void MainWindow::populatePacksListWidgetWithMapping(const QString &folderPath, const QHash<QString, QString> &folderMapping)
+{
+    ui->packsListWidget->clear();
+
+    QSettings settings("Falcon", "SimsSwitcher");
+    QStringList checkedPacks = settings.value("packsSelection").toStringList();
+
+    QDir dir(folderPath);
+    QFileInfoList folderList = dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+    for (const QFileInfo &info : folderList) {
+        QString originalName = info.fileName();
+        if (!folderMapping.contains(originalName))
+            continue;
+        QString displayName = folderMapping.value(originalName);
+        QListWidgetItem *item = new QListWidgetItem(displayName);
+        item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+        if (checkedPacks.contains(originalName))
+            item->setCheckState(Qt::Checked);
+        else
+            item->setCheckState(Qt::Unchecked);
+        item->setData(Qt::UserRole, info.absoluteFilePath());
+        item->setData(Qt::UserRole + 1, originalName);
+        ui->packsListWidget->addItem(item);
+        qDebug() << "Added folder:" << originalName << "as" << displayName
+                 << "Full path:" << info.absoluteFilePath();
+    }
+    sortPacksListByCategory();
+}
+
 void MainWindow::sortPacksListByCategory()
 {
     // Define alias-to-description mappings
@@ -825,7 +916,7 @@ void MainWindow::on_browseGameButton_clicked() {
         ui->gameLineEdit->setText(gameDir);
 
         // Populate the file list using the full path (Sims 4 Root + Subdirectory).
-        populatePacksListWidget(gameDir,csvFilePath);
+        loadPacksCsv(csvCloudPath, csvFilePath);
 
         // Use QSettings to store the full path including the subdirectory.
         QSettings settings("Falcon", "SimsSwitcher");
