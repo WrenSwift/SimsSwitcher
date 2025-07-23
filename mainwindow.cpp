@@ -187,8 +187,8 @@ void MainWindow::loadPacksCsv(const QString &url, const QString &localPath)
             QMessageBox::warning(this, tr("Network Error"),
                 tr("Failed to download packs CSV from the cloud. Using local backup copy instead."));
         } else {
-            QMessageBox::warning(this, tr("Error"),
-                tr("Failed to download packs CSV and no local backup is available: %1").arg(reply->errorString()));
+            QMessageBox::warning(this, tr("Network Error"),
+                tr("Failed to download packs CSV from the cloud and no local backup is available: %1").arg(reply->errorString()));
             reply->deleteLater();
             return;
         }
@@ -675,8 +675,8 @@ void MainWindow::do_S4MPCheck() {
 
     if (foundS4MP) {
         QMessageBox::warning(this, tr("S4MP Detected"),
-            tr("\"S4MP Launcher Windows.exe\" is present in your active mods. "
-               "If you plan to use S4MP please use their launcher for pack selection after desired mods are selected."));
+            tr("'%1' is present in your active mods. "
+               "If you plan to use S4MP please use their launcher for pack selection after desired mods are selected.").arg(s4mpExeName));
     }
 }
 
@@ -830,6 +830,27 @@ void MainWindow::populatePacksListWidgetWithMapping(const QString &folderPath, c
         qDebug() << "Added folder:" << originalName << "as" << displayName
                  << "Full path:" << info.absoluteFilePath();
     }
+    // If any packs are present in the source directory that are not in the mapping, display a warning.
+    QStringList mappedNames = folderMapping.keys();
+    // Check for unmapped packs in the directory.
+    for (const QFileInfo &info : folderList) {
+        // Get the original name from the QFileInfo.
+        QString originalName = info.fileName();
+        // Sort out original names that are not in the format of "EP01", "GP02", etc.
+        if (originalName.length() < 4 || !originalName.startsWith("EP") && !originalName.startsWith("GP") &&
+            !originalName.startsWith("SP") && !originalName.startsWith("FP")) {
+            continue; // Skip names that do not match the expected format.
+        }
+        if (!mappedNames.contains(originalName)) {
+            // If the original name is not in the mapping, it means it's an unmapped pack.
+            qDebug() << "Unmapped pack found:" << originalName;
+            QMessageBox::warning(this, tr("Unmapped Pack Warning"),
+                                 tr("The pack '%1' is not mapped in the CSV file. "
+                                    "This could mean the packs data is out of date or another error is occuring. "
+                                    "If you have not recieved a Network Error please report the issue.").arg(originalName));
+        }
+    }
+    // Automatically call the sorting function to group items into categories.
     sortPacksListByCategory();
 }
 
