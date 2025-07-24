@@ -29,7 +29,7 @@ QString activeSubDirName = "Mods"; // This is where the active mods are stored
 QString disabledSubDirName = "(d)Mods"; // Change this to your desired subdirectory
 QString csvFilePath = "inc/packsDil.csv";
 QString csvCloudPath = "https://wrenswift.com/packsDil.csv";
-QString version = "1.1.0"; // Version of the application
+QString version = "1.0.1"; // Version of the application
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
