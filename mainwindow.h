@@ -63,5 +63,7 @@ private:
     void doVersionCheck();
     void do_patreonLink();
     void do_S4MPCheck();
+    void loadPacksCsv(const QString &url, const QString &localPath);
+    void populatePacksListWidgetWithMapping(const QString &folderPath, const QHash<QString, QString> &folderMapping);
 };
 #endif // MAINWINDOW_H
