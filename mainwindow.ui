@@ -525,6 +525,32 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <string>Import Presets...</string>
       </property>
      </widget>
+     <widget class="QPushButton" name="reenableButton">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>320</y>
+        <width>171</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Reenable</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_6">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>300</y>
+        <width>181</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Reenable Experimental Warning:</string>
+      </property>
+     </widget>
     </widget>
    </widget>
    <widget class="QPushButton" name="menuMods">

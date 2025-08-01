@@ -3,6 +3,9 @@
 
 #include <QMainWindow>
 #include <QListWidgetItem>
+#include <QDragEnterEvent>
+#include <QDropEvent>
+#include <QMimeData>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -16,6 +19,9 @@ class MainWindow : public QMainWindow
 
 protected:
     void closeEvent(QCloseEvent *event) override;
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dragMoveEvent(QDragMoveEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
 
 public:
     MainWindow(QWidget *parent = nullptr);
@@ -43,6 +49,7 @@ private slots:
     void on_menuSettings_clicked();
     void on_exportButton_clicked();
     void on_importButton_clicked();
+    void on_reenableButton_clicked();
 
 private:
     Ui::SimsSwitcher *ui;

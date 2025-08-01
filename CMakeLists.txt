@@ -17,6 +17,7 @@ add_executable(SimsSwitcher
     exportwindow.ui
     mainwindow.cpp
     mainwindow.ui
+    FileListItemWidget.cpp
     main.cpp
     resources.qrc
     icons/SimSwitcherIcon.rc  # Uncomment if this file exists
