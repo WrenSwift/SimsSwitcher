@@ -1,24 +1,24 @@
 # SimsSwitcher
-v1.1.0
+v1.0.0
 
 **SimsSwitcher** is a Windows desktop application for managing The Sims 4 mods and packs. It allows you to easily enable/disable mods, create and switch between presets for both mods and packs, export/import presets, and launch the game with custom pack selections.
 
 ---
 
-## What's New in 1.1.0
+## What's New in 1.0.0
 
-- **Drag-and-Drop Support:**  
-  You can now drag files and folders directly into the Mods or (d)Mods list to add them to your game.
-- **Delete Mods to Trash:**  
-  Each mod entry now has an "X" button to delete files or folders, moving them to the system trash after confirmation.
-- **Cloud CSV Support:**  
-  Pack names are now loaded from a cloud CSV file, with automatic fallback to a local copy if offline.
-- **Improved Preset Handling:**  
-  Preset loading and saving now use the new custom list widget, ensuring accurate selection and compatibility.
-- **Better Error Handling:**  
-  More robust checks for file operations, drag-and-drop, and preset management.
-- **UI Tweaks:**  
-  Improved checkbox appearance, layout, and feedback for all file list operations.
+- **Export/Import Presets:**  
+  Export your mod and pack presets as individual JSON files, and optionally export all mods from a preset as a ZIP archive. Import presets on any device running SimsSwitcher.
+- **Bulk Export:**  
+  Select multiple presets for export at once, with progress feedback.
+- **Multi-Select Preset Lists:**  
+  Easily select multiple mod or pack presets for export or deletion.
+- **Improved Duplicate Detection:**  
+  The app now warns you if the same mod exists in both active and disabled folders, helping prevent mod conflicts.
+- **Progress Bar for Export:**  
+  Visual feedback during export operations.
+- **UI Improvements:**  
+  More robust error handling, clearer warnings, and improved workflow for managing and exporting presets.
 - **Bug Fixes and Stability:**  
   Many fixes and refinements for a smoother experience.
 
@@ -33,7 +33,7 @@ v1.1.0
   Save and load sets of enabled mods as named presets for different play styles or testing setups.
 
 - **Packs Management:**  
-  View, enable, or disable Sims 4 packs using friendly names loaded from a cloud CSV file (with local fallback).
+  View, enable, or disable Sims 4 packs using friendly names loaded from a CSV file.
 
 - **Pack Presets:**  
   Save and load sets of enabled packs as named presets, making it easy to switch between different pack configurations.
@@ -44,11 +44,8 @@ v1.1.0
 - **Game Launcher:**  
   Launch The Sims 4 directly from the app, with optional arguments to disable selected packs.
 
-- **Bulk Operations:**  
-  Select all/deselect all mods or packs, and perform batch exports or deletions.
-
-- **Duplicate Detection:**  
-  Warns if the same mod exists in both active and disabled folders.
+- **Persistent Settings:**  
+  Remembers your last used directories, mod presets, and pack presets between sessions.
 
 ---
 
@@ -98,24 +95,17 @@ No installation is required. If you encounter issues running the app, ensure you
    - Click "Export" to open the export wizard, select one or more presets, and export them as JSON (and optionally ZIP) files.
    - Click "Import" to select one or more preset files and add them to your SimsSwitcher.
 
-8. **Drag-and-Drop Mods:**  
-   Drag files or folders from Windows Explorer directly into the Mods or (d)Mods list to add them.
-
-9. **Delete Mods:**  
-   Click the "X" button next to any mod or folder to move it to the system trash.
-
-10. **Launch Game:**  
-    Click "Launch with selected packs" to start The Sims 4 with your selected packs and mods.
+8. **Launch Game:**  
+   Click "Launch with selected packs" to start The Sims 4 with your selected packs and mods.
 
 ---
 
 ## File Structure
 
 - `mainwindow.cpp` / `mainwindow.h` — Main application logic and UI.
-- `FileListItemWidget.cpp` / `FileListItemWidget.h` — Custom widget for mod list items.
 - `exportwindow.cpp` / `exportwindow.h` — Export/import wizard logic.
 - `resources.qrc` — Qt resource file (icons, CSV).
-- `inc/packsDil.csv` — Local CSV mapping for pack names (used as fallback).
+- `inc/packsDil.csv` — CSV mapping for pack names.
 - `icons/` — Application icons.
 - `CMakeLists.txt` — Build configuration.
 
@@ -127,16 +117,13 @@ No installation is required. If you encounter issues running the app, ensure you
   Ensure you have write permissions in your user directory. Presets are stored using `QSettings` under the "Falcon" organization.
 
 - **CSV file not found:**  
-  Make sure `inc/packsDil.csv` is present for offline use.
+  Make sure `inc/packsDil.csv` is present.
 
 - **UI elements missing or not working:**  
   Ensure you are using the latest version and that all files from the release are present.
 
 - **Duplicate Mods Warning:**  
   If you see a warning about mods existing in both active and disabled folders, resolve the duplicates to avoid conflicts.
-
-- **Drag-and-Drop Issues:**  
-  Only local files and folders can be added via drag-and-drop. Files from archives or browsers may not work.
 
 ---
 
@@ -149,6 +136,4 @@ MIT License
 ## Credits
 
 - Developed by WrenSwift
-- Uses [Qt](https://www.qt.io/) for the UI framework
-
----
+- Uses [Qt](https://www.qt.io/)
