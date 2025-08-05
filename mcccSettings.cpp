@@ -6,6 +6,7 @@
 #include <QDir>
 #include <QMessageBox>
 #include <QString>
+#include <QDirIterator>
 
 
 MCCCSettings::MCCCSettings(QWidget *parent) :
@@ -70,8 +71,45 @@ void MCCCSettings::on_mcccSaveButton_clicked()
         }
     }
 
-    QString sourceFilePath = rootdir + "/Mods/mc_settings.cfg";
+    QString activeModsPath = rootdir + "/Mods";
+    QString mcccPack = "mc_cmd_center.package"; // Assuming this is the MCCC settings file name
+    QString mcccSetName = "mc_settings.cfg"; // The name to use in the Mods directory
+    QString mcccDir = nullptr;
+
+    if (QFile::exists(activeModsPath + "/" + mcccPack)) {
+        QString mcccDir = activeModsPath;
+    }else {
+        QDirIterator it(activeModsPath, QDir::Dirs | QDir::NoDotAndDotDot);
+        while (it.hasNext()) {
+            QString subDirPath = it.next();
+            if (QFile::exists(subDirPath + "/" + mcccPack)) {
+                QString mcccDir = subDirPath;
+                break;
+            }
+        }
+    }
+
+    if (mcccDir == nullptr) {
+        QMessageBox::warning(this, "Error", "MCCC settings file not found in Mods.");
+        return;
+    }
+
+    QString sourceFilePath = mcccDir + "/" + mcccSetName;
     QString destFilePath = mcccPresetsDir.filePath(settingsName + ".cfg");
+    if (QFile::exists(destFilePath)) {
+        QMessageBox::StandardButton reply;
+        reply = QMessageBox::question(this, "Overwrite Confirmation",
+                                      "A preset with this name already exists. Do you want to overwrite it?",
+                                      QMessageBox::Yes | QMessageBox::No);
+        if (reply == QMessageBox::No) {
+            return; // User chose not to overwrite
+        }
+        if (!QFile::remove(destFilePath)) {
+            QMessageBox::warning(this, "Error", "Failed to remove existing preset file.");
+            return;
+        }
+    }
+
     if (QFile::exists(sourceFilePath)) {
         if (QFile::copy(sourceFilePath, destFilePath)) {
             QMessageBox::information(this, "Success", "Settings copied successfully.");
@@ -82,7 +120,6 @@ void MCCCSettings::on_mcccSaveButton_clicked()
         QMessageBox::warning(this, "Error", "Source settings file does not exist.");
     }
     populatePresetList();
-    ui->settingsName->clear(); // Clear the settings name input after saving
 }
 
 // On load button clicked, load MCCC settings from the selected item in the mcccPresetList moving it to active mods and renaming it to mc_settings.cfg.
@@ -108,7 +145,25 @@ void MCCCSettings::on_mcccLoadButton_clicked()
     QString rootdir = mainWindowPointer->getRootDir();
     QDir mcccPresetsDir(rootdir + "/mcccPresets");
     QString sourceFilePath = mcccPresetsDir.filePath(settingsName + ".cfg");
-    QString destFilePath = rootdir + "/Mods/mc_settings.cfg";
+    QString activeModsPath = rootdir + "/Mods";
+    QString mcccPack = "mc_cmd_center.package"; // Assuming this is the MCCC settings
+    QString mcccSetName = "mc_settings.cfg"; // The name to use in the Mods directory
+    QString mcccDir = nullptr;
+    if (QFile::exists(activeModsPath + "/" + mcccPack)) {
+        mcccDir = activeModsPath;
+    }else {
+        QDirIterator it(activeModsPath, QDir::Dirs | QDir::NoDotAndDotDot);
+        while (it.hasNext()) {
+            QString subDirPath = it.next();
+            if (QFile::exists(subDirPath + "/" + mcccPack)) {
+                mcccDir = subDirPath;
+                break;
+            }
+        }
+    }
+
+
+    QString destFilePath = mcccDir + "/" + mcccSetName;
 
     if (QFile::exists(sourceFilePath)) {
         // Remove existing mc_settings.cfg if it exists and warn the user that it will be overwritten with prompt to continue or cancel.

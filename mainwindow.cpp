@@ -326,6 +326,15 @@ void MainWindow::mcccCheck() {
     // Check if the mccc package exists in the active mods directory.
     if (QFile::exists(activeModsPath + "/" + mcccPack)) {
         foundMccc = true;
+    }else {
+        QDirIterator it(activeModsPath, QDir::Dirs | QDir::NoDotAndDotDot);
+        while (it.hasNext()) {
+            QString subDirPath = it.next();
+            if (QFile::exists(subDirPath + "/" + mcccPack)) {
+                foundMccc = true;
+                break;
+            }
+        }
     }
 
     if (foundMccc) {
@@ -770,6 +779,15 @@ void MainWindow::do_S4MPCheck() {
     // Check if the S4MP executable exists in the active mods directory.
     if (QFile::exists(activeModsPath + "/" + s4mpExeName)) {
         foundS4MP = true;
+    }else {
+        QDirIterator it(activeModsPath, QDir::Dirs | QDir::NoDotAndDotDot);
+        while (it.hasNext()) {
+            QString subDirPath = it.next();
+            if (QFile::exists(subDirPath + "/" + s4mpExeName)) {
+                foundS4MP = true;
+                break;
+            }
+        }
     }
 
     if (foundS4MP) {
