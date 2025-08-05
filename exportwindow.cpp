@@ -1,5 +1,7 @@
 #include "exportwindow.h"
 #include "ui_exportwindow.h" // This header defines Ui::ExportWindow
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
 #include <QFileDialog>
 #include <QSettings>
 #include <QJsonObject>
@@ -16,10 +18,35 @@ ExportWindow::ExportWindow(QWidget *parent) : QWizard(parent), ui(new Ui::SimsSw
     // Enable multi-selection for both lists
     ui->modPresetList->setSelectionMode(QAbstractItemView::MultiSelection);
     ui->packPresetList->setSelectionMode(QAbstractItemView::MultiSelection);
+    ui->mcccPresetList->setSelectionMode(QAbstractItemView::MultiSelection);
     loadPresets();
+    loadMCCCPresets();
 }
 
 ExportWindow::~ExportWindow() { delete ui; }
+
+void ExportWindow::loadMCCCPresets() {
+    MainWindow *mainWindowPointer = qobject_cast<MainWindow *>(parentWidget());
+    if (!mainWindowPointer) {
+        QMessageBox::warning(this, "Error", "Main window pointer is invalid.");
+        return;
+    }
+
+    QString rootdir = mainWindowPointer->getRootDir();
+    QDir mcccPresetsDir(rootdir + "/mcccPresets");
+    if (!mcccPresetsDir.exists()) {
+        // Directory does not exist, nothing to populate
+        return;
+    }
+
+    QStringList filter;
+    filter << "*.cfg";
+    QFileInfoList fileList = mcccPresetsDir.entryInfoList(filter, QDir::Files);
+    for (const QFileInfo &fileInfo : fileList) {
+        QString fileName = fileInfo.completeBaseName(); // Get filename without extension
+        ui->mcccPresetList->addItem(fileName);
+    }
+}
 
 void ExportWindow::loadPresets() {
     // Load mod and pack presets from QSettings and populate the UI lists
@@ -201,6 +228,39 @@ void ExportWindow::on_exportButton_clicked() {
             file.write(QJsonDocument(presetObj).toJson());
             file.close();
             ++exportedCount;
+        }
+        ui->exportProgressBar->setValue(++progress);
+        QCoreApplication::processEvents(); // Allow UI to update
+    }
+
+    // Export selected MCCC presets as individual files
+    QList<QListWidgetItem*> mcccItems = ui->mcccPresetList->selectedItems();
+    for (QListWidgetItem *item : mcccItems) {
+        QString key = item->text();
+        MainWindow *mainWindowPointer = qobject_cast<MainWindow *>(parentWidget());
+        if (!mainWindowPointer) {
+            QMessageBox::warning(this, "Error", "Main window pointer is invalid.");
+            continue;
+        }
+        QString rootdir = mainWindowPointer->getRootDir();
+        QString mcccPresetsDirPath = rootdir + "/mcccPresets";
+        QDir mcccPresetsDir(mcccPresetsDirPath);
+        if (!mcccPresetsDir.exists()) {
+            QMessageBox::warning(this, "Error", "MCCC presets directory does not exist: " + mcccPresetsDirPath);
+            continue;
+        }
+        QString presetFilePath = mcccPresetsDir.filePath(key + ".cfg");
+        QFileInfo presetFileInfo(presetFilePath);
+        if (!presetFileInfo.exists()) {
+            QMessageBox::warning(this, "Error", "MCCC preset file does not exist: " + presetFilePath);
+            continue;
+        }
+
+        QString destFilePath = exportDir.filePath(key + ".cfg");
+        if (QFile::copy(presetFilePath, destFilePath)) {
+            ++exportedCount;
+        } else {
+            QMessageBox::warning(this, "Error", "Failed to copy MCCC preset file: " + presetFilePath);
         }
         ui->exportProgressBar->setValue(++progress);
         QCoreApplication::processEvents(); // Allow UI to update

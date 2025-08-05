@@ -13,10 +13,13 @@ qt_standard_project_setup()
 
 add_executable(SimsSwitcher
     WIN32
+    mcccsettings.cpp
+    mcccsettings.ui
     exportwindow.cpp
     exportwindow.ui
     mainwindow.cpp
     mainwindow.ui
+    FileListItemWidget.cpp
     main.cpp
     resources.qrc
     icons/SimSwitcherIcon.rc  # Uncomment if this file exists

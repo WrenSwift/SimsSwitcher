@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "exportwindow.h" // Add this include at the top if not already present
+#include "MCCCSettings.h" // Add this include for MCCCSettings
+#include "FileListItemWidget.h"
 #include <QFileDialog>
 #include <QDir>
 #include <QMessageBox>
@@ -29,7 +31,7 @@ QString activeSubDirName = "Mods"; // This is where the active mods are stored
 QString disabledSubDirName = "(d)Mods"; // Change this to your desired subdirectory
 QString csvFilePath = "inc/packsDil.csv";
 QString csvCloudPath = "https://wrenswift.com/packsDil.csv";
-QString version = "1.0.1"; // Version of the application
+QString version = "1.1.0"; // Version of the application
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -37,6 +39,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    mcccCheck();
     updatePresetList();
     updatePackPresetList(); // Initialize pack presets
     doVersionCheck();
@@ -77,7 +80,14 @@ MainWindow::MainWindow(QWidget *parent)
         loadPacksCsv(csvCloudPath, csvFilePath);
     }
 
+    ui->fileListWidget->setAcceptDrops(true);
+    ui->fileListWidget->setDragDropMode(QAbstractItemView::DropOnly);
+
     qDebug() << "Resource exists:" << QFile::exists(":/inc/packsDil.csv");
+}
+
+QString MainWindow::getRootDir() const {
+    return ui->rootLineEdit->text().trimmed();
 }
 
 void MainWindow::doVersionCheck() {
@@ -118,11 +128,13 @@ void MainWindow::doVersionCheck() {
                 QList<int> localParts = parseVersion(version);
 
                 bool isNewer = false;
+                bool isOlder = false;
                 for (int i = 0; i < 3; ++i) {
                     if (latestParts[i] > localParts[i]) {
                         isNewer = true;
                         break;
-                    } else if (latestParts[i] < localParts[i]) {
+                    } else if (localParts[i] > latestParts[i]) {
+                        isOlder = true;
                         break;
                     }
                 }
@@ -143,6 +155,36 @@ void MainWindow::doVersionCheck() {
                     msgBox.exec();
                     return;
                     QMessageBox::warning(nullptr, "Update Available", message);
+                } else if (isOlder) {
+                    if (QSettings("Falcon", "SimsSwitcher").value("dontShowExperimentalVersion", false).toBool()) {
+                        qDebug() << "Experimental version check skipped by user setting.";
+                        return;
+                    }
+                    QString downloadUrl = jsonDoc.object().value("html_url").toString();
+                    QString expMsg = QString("You are running an newer version: %1\nLatest version is: %2 You may experience bugs or unexpected behaivor.").arg(version, latestTag);
+                    if (!downloadUrl.isEmpty()) {
+                        expMsg += QString("<br><br>You can get the latest release version here: <a href=\"%1\">%1</a>").arg(downloadUrl);
+                    }
+                    expMsg += "<br><br>Are you sure you want to continue?";
+                    // Use rich text and enable links in the QMessageBox
+                    QMessageBox msgBox;
+                    msgBox.setWindowTitle("Experimental Version");
+                    msgBox.setTextFormat(Qt::RichText);
+                    msgBox.setText(expMsg);
+                    msgBox.setTextInteractionFlags(Qt::TextBrowserInteraction);
+                    msgBox.setIcon(QMessageBox::Warning);
+                    msgBox.setStandardButtons(QMessageBox::Ok);
+                    msgBox.setDefaultButton(QMessageBox::Ok);
+                    // Add do not show again checkbox
+                    QCheckBox *dontShowAgain = new QCheckBox("Do not show this message again");
+                    msgBox.setCheckBox(dontShowAgain);
+                    // Add funtion to Checkbox to save setting
+                    connect(dontShowAgain, &QCheckBox::stateChanged, this, [this, dontShowAgain](int state) {
+                        QSettings settings("Falcon", "SimsSwitcher");
+                        settings.setValue("dontShowExperimentalVersion", state == Qt::Checked);
+                    });
+                    msgBox.exec();   
+                    return; 
                 } else {
                     qDebug() << "Version check passed.";
                 }
@@ -271,31 +313,68 @@ void MainWindow::on_browseRootButton_clicked() {
     }
 }
 
+void MainWindow::mcccCheck() {
+    // Check for "mc_cmd_center.package" in active mods.
+    QString mcccPack = "mc_cmd_center.package";
+    bool foundMccc = false;
+
+    // Get the active mods directory from the root directory.
+    QString rootDir = ui->rootLineEdit->text();
+    QDir baseDir(rootDir);
+    QString activeModsPath = baseDir.filePath(activeSubDirName);
+
+    // Check if the mccc package exists in the active mods directory.
+    if (QFile::exists(activeModsPath + "/" + mcccPack)) {
+        foundMccc = true;
+    }else {
+        QDirIterator it(activeModsPath, QDir::Dirs | QDir::NoDotAndDotDot);
+        while (it.hasNext()) {
+            QString subDirPath = it.next();
+            if (QFile::exists(subDirPath + "/" + mcccPack)) {
+                foundMccc = true;
+                break;
+            }
+        }
+    }
+
+    if (foundMccc) {
+        // Make mcccButton visible
+        ui->mcccButton->setVisible(true);
+        ui->mcccButton->setEnabled(true);
+    }else {
+        // Hide mcccButton if not found
+        ui->mcccButton->setVisible(false);
+        ui->mcccButton->setEnabled(false);
+    }
+}
+
+void MainWindow::on_mcccButton_clicked() {
+    
+    MCCCSettings mcccSettings(this);
+    mcccSettings.exec(); // Show as a modal dialog
+}
+
 void MainWindow::on_fileSelectAllButton_clicked()
 {
     int itemCount = ui->fileListWidget->count();
-
     for (int i = 0; i < itemCount; ++i) {
         QListWidgetItem* item = ui->fileListWidget->item(i);
-
-        // Ensure the item is checkable before changing its state
-        if (item->flags() & Qt::ItemIsUserCheckable) {
-            item->setCheckState(Qt::Checked);
-        }
+        QWidget* widget = ui->fileListWidget->itemWidget(item);
+        auto* fileWidget = qobject_cast<FileListItemWidget*>(widget);
+        if (fileWidget)
+            fileWidget->setChecked(true);
     }
 }
 
 void MainWindow::on_fileDeselectAllButton_clicked()
 {
     int itemCount = ui->fileListWidget->count();
-
     for (int i = 0; i < itemCount; ++i) {
         QListWidgetItem* item = ui->fileListWidget->item(i);
-
-        // Ensure the item is checkable before changing its state
-        if (item->flags() & Qt::ItemIsUserCheckable) {
-            item->setCheckState(Qt::Unchecked);
-        }
+        QWidget* widget = ui->fileListWidget->itemWidget(item);
+        auto* fileWidget = qobject_cast<FileListItemWidget*>(widget);
+        if (fileWidget)
+            fileWidget->setChecked(false);
     }
 }
 
@@ -312,12 +391,16 @@ void MainWindow::populateFileList(const QString& firstDir, const QString& second
     // Collect names from firstDir (Mods)
     QFileInfoList firstList = dirFirst.entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries);
     for (const QFileInfo& fileInfo : firstList) {
+        if (fileInfo.fileName().compare("Resource.cfg", Qt::CaseInsensitive) == 0)
+        continue; // Ignore Resource.cfg
         firstNames.insert(fileInfo.fileName());
     }
 
     // Collect names from secondDir ((d)Mods)
     QFileInfoList secondList = dirSecond.entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries);
     for (const QFileInfo& fileInfo : secondList) {
+        if (fileInfo.fileName().compare("Resource.cfg", Qt::CaseInsensitive) == 0)
+        continue; // Ignore Resource.cfg
         secondNames.insert(fileInfo.fileName());
     }
 
@@ -336,7 +419,6 @@ void MainWindow::populateFileList(const QString& firstDir, const QString& second
     // A helper lambda that takes a directory path and a flag indicating if the items should be pre-checked.
     auto addDirectoryItems = [this](const QString &dirPath, bool preChecked) {
         QDir dir(dirPath);
-        // Retrieve all files and folders (ignoring "." and "..")
         QFileInfoList fileList = dir.entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries);
 
         if (!fileList.isEmpty()) {
@@ -358,24 +440,45 @@ void MainWindow::populateFileList(const QString& firstDir, const QString& second
             ui->fileListWidget->addItem(headerItem);
         }
 
-        // Add each file/folder from the current directory
-        for (const QFileInfo& fileInfo : fileList) {
-            QString displayName = fileInfo.fileName();
-            QListWidgetItem* item = new QListWidgetItem(displayName);
-            // Allow items to be checkable
-            item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-            // Set the check state based on the flag
-            item->setCheckState(preChecked ? Qt::Checked : Qt::Unchecked);
+        mcccCheck(); // Check if MCCC is present in the active mods directory
 
-            // Step 1: Save the full file path in the item’s data.
-            // This ensures that later you know which exact file or folder
-            // (including its originating directory) is being processed.
+        for (const QFileInfo& fileInfo : fileList) {
+            if (fileInfo.fileName().compare("Resource.cfg", Qt::CaseInsensitive) == 0)
+            continue; // Ignore Resource.cfg
+
+            QString displayName = fileInfo.fileName();
             QString fullPath = dir.filePath(displayName);
+
+            QListWidgetItem* item = new QListWidgetItem(ui->fileListWidget);
+            item->setSizeHint(QSize(0, 20)); // Adjust height as needed
+
+            auto* widget = new FileListItemWidget(displayName);
+            widget->setChecked(preChecked); // Set initial state
+            ui->fileListWidget->setItemWidget(item, widget);
             item->setData(Qt::UserRole, fullPath);
 
-            // Optional: For debugging, print the full path.
-            qDebug() << "Added item:" << displayName << "with full path:" << fullPath;
-            ui->fileListWidget->addItem(item);
+            // --- Add delete functionality ---
+            connect(widget, &FileListItemWidget::deleteRequested, this, [this, fullPath, item]() {
+                if (QMessageBox::question(this, tr("Delete Item"),
+                    tr("Are you sure you want to delete '%1'?\nThis will move the item to the system trash.").arg(fullPath),
+                    QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes)
+                {
+                #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+                    if (!QFile::moveToTrash(fullPath)) {
+                        QMessageBox::warning(this, tr("Delete Failed"), tr("Failed to move '%1' to trash.").arg(fullPath));
+                    } else {
+                        delete ui->fileListWidget->takeItem(ui->fileListWidget->row(item));
+                    }
+                #else
+                    // Qt 5 fallback: permanently delete (or use platform-specific trash)
+                    if (!QFile::remove(fullPath)) {
+                        QMessageBox::warning(this, tr("Delete Failed"), tr("Failed to delete '%1'.").arg(fullPath));
+                    } else {
+                        delete ui->fileListWidget->takeItem(ui->fileListWidget->row(item));
+                    }
+                #endif
+                }
+            });
         }
     };
 
@@ -398,8 +501,10 @@ void MainWindow::savePreset(const QString& presetName) {
     QStringList enabledItems;
     for (int i = 0; i < ui->fileListWidget->count(); ++i) {
         QListWidgetItem* item = ui->fileListWidget->item(i);
-        if ((item->flags() & Qt::ItemIsUserCheckable) && item->checkState() == Qt::Checked) {
-            enabledItems << item->text();
+        QWidget* widget = ui->fileListWidget->itemWidget(item);
+        auto* fileWidget = qobject_cast<FileListItemWidget*>(widget);
+        if (fileWidget && fileWidget->isChecked()) {
+            enabledItems << fileWidget->fileName();
         }
     }
     QSettings settings("Falcon", "SimsSwitcher");
@@ -411,12 +516,11 @@ void MainWindow::loadPreset(const QString& presetName) {
     QStringList enabledItems = settings.value("presets/" + presetName).toStringList();
     for (int i = 0; i < ui->fileListWidget->count(); ++i) {
         QListWidgetItem* item = ui->fileListWidget->item(i);
-        if (item->flags() & Qt::ItemIsUserCheckable) {
-            item->setCheckState(enabledItems.contains(item->text()) ? Qt::Checked : Qt::Unchecked);
-        }
+        QWidget* widget = ui->fileListWidget->itemWidget(item);
+        auto* fileWidget = qobject_cast<FileListItemWidget*>(widget);
+        if (fileWidget)
+            fileWidget->setChecked(enabledItems.contains(fileWidget->fileName()));
     }
-
-    // Run the activeButton function to move the checked items to the active directory
     on_activeButton_clicked();
 }
 
@@ -459,7 +563,9 @@ void MainWindow::on_modsLoadButton_clicked()
         bool found = false;
         for (int i = 0; i < ui->fileListWidget->count(); ++i) {
             QListWidgetItem* item = ui->fileListWidget->item(i);
-            if ((item->flags() & Qt::ItemIsUserCheckable) && item->text() == presetItem) {
+            QWidget* widget = ui->fileListWidget->itemWidget(item);
+            auto* fileWidget = qobject_cast<FileListItemWidget*>(widget);
+            if (fileWidget && fileWidget->fileName() == presetItem) {
                 found = true;
                 break;
             }
@@ -544,15 +650,16 @@ void MainWindow::on_activeButton_clicked() {
         return;
     }
 
-    // Collect all checkable (i.e. real file/folder) items from the list.
-    QList<QListWidgetItem*> itemsToProcess;
+    // Collect all items from the list that are real files/folders (skip headers)
+    QList<QPair<QListWidgetItem*, FileListItemWidget*>> itemsToProcess;
     int totalItems = ui->fileListWidget->count();
     for (int i = 0; i < totalItems; ++i) {
         QListWidgetItem* item = ui->fileListWidget->item(i);
-        // Skip items that are not marked as user-checkable (like our header items)
-        if (!(item->flags() & Qt::ItemIsUserCheckable))
-            continue;
-        itemsToProcess.append(item);
+        QWidget* widget = ui->fileListWidget->itemWidget(item);
+        auto* fileWidget = qobject_cast<FileListItemWidget*>(widget);
+        if (!fileWidget)
+            continue; // Skip headers or non-file items
+        itemsToProcess.append(qMakePair(item, fileWidget));
     }
 
     if (itemsToProcess.isEmpty()) {
@@ -565,8 +672,10 @@ void MainWindow::on_activeButton_clicked() {
     progress.setWindowModality(Qt::WindowModal);
 
     int progressValue = 0;
-    for (QListWidgetItem* item : itemsToProcess) {
-        // Retrieve the full original source path that was stored in the UserRole.
+    for (const auto& pair : itemsToProcess) {
+        QListWidgetItem* item = pair.first;
+        FileListItemWidget* fileWidget = pair.second;
+
         QString srcPath = item->data(Qt::UserRole).toString();
         QFileInfo fileInfo(srcPath);
 
@@ -576,9 +685,9 @@ void MainWindow::on_activeButton_clicked() {
             continue;
         }
 
-        // Determine the desired destination based solely on the item's check state.
-        // Checked items should end up in m_firstDir (Active), unchecked in m_secondDir (Inactive).
-        QString desiredDestDir = (item->checkState() == Qt::Checked) ? m_firstDir : m_secondDir;
+        // Determine the desired destination based on the custom widget's checked state.
+        // Checked items go to m_firstDir (Active), unchecked to m_secondDir (Inactive).
+        QString desiredDestDir = fileWidget->isChecked() ? m_firstDir : m_secondDir;
 
         // Get the current parent directory of the item.
         QString currentDir = fileInfo.absolutePath();
@@ -598,7 +707,6 @@ void MainWindow::on_activeButton_clicked() {
             QDir srcDir(srcPath);
             success = srcDir.rename(srcPath, destPath);
             if (!success) {
-                // Optionally, you could implement a copy-then-delete fallback here.
                 QMessageBox::warning(this, tr("Move Error"),
                                      tr("Failed to move directory: %1").arg(fileInfo.fileName()));
             }
@@ -671,6 +779,15 @@ void MainWindow::do_S4MPCheck() {
     // Check if the S4MP executable exists in the active mods directory.
     if (QFile::exists(activeModsPath + "/" + s4mpExeName)) {
         foundS4MP = true;
+    }else {
+        QDirIterator it(activeModsPath, QDir::Dirs | QDir::NoDotAndDotDot);
+        while (it.hasNext()) {
+            QString subDirPath = it.next();
+            if (QFile::exists(subDirPath + "/" + s4mpExeName)) {
+                foundS4MP = true;
+                break;
+            }
+        }
     }
 
     if (foundS4MP) {
@@ -1129,7 +1246,7 @@ void MainWindow::on_importButton_clicked()
         this,
         tr("Import Preset Files"),
         QString(),
-        tr("Preset Files (*.json)")
+        tr("Preset Files (*.json);;MCCC Preset Files (*.cfg);;All Files (*.*)")
     );
 
     if (fileNames.isEmpty())
@@ -1137,33 +1254,49 @@ void MainWindow::on_importButton_clicked()
 
     QSettings settings("Falcon", "SimsSwitcher");
     int importedCount = 0;
+    // Iterate through each selected file with extension .json 
     for (const QString& filePath : fileNames) {
-        QFile file(filePath);
-        if (!file.open(QIODevice::ReadOnly))
-            continue;
+        QFileInfo fileInfo(filePath);
+        QString ext = fileInfo.suffix().toLower();
 
-        QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
-        file.close();
-        if (!doc.isObject())
-            continue;
+        if (ext == "json") {
+            QFile file(filePath);
+            if (!file.open(QIODevice::ReadOnly))
+                continue;
 
-        QJsonObject obj = doc.object();
-        QString type = obj.value("type").toString();
-        QString name = obj.value("name").toString();
-        QJsonArray itemsArray = obj.value("items").toArray();
-        QStringList items;
-        for (const QJsonValue& v : itemsArray)
-            items << v.toString();
+            QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+            file.close();
+            if (!doc.isObject())
+                continue;
 
-        if (type == "modPreset" && !name.isEmpty()) {
-            settings.setValue("presets/" + name, items);
-            ++importedCount;
-        } else if (type == "packPreset" && !name.isEmpty()) {
-            settings.setValue("packPresets/" + name, items);
-            ++importedCount;
+            QJsonObject obj = doc.object();
+            QString type = obj.value("type").toString();
+            QString name = obj.value("name").toString();
+            QJsonArray itemsArray = obj.value("items").toArray();
+            QStringList items;
+            for (const QJsonValue& v : itemsArray)
+                items << v.toString();
+
+            if (type == "modPreset" && !name.isEmpty()) {
+                settings.setValue("presets/" + name, items);
+                ++importedCount;
+            } else if (type == "packPreset" && !name.isEmpty()) {
+                settings.setValue("packPresets/" + name, items);
+                ++importedCount;
+            }
+        } else if (ext == "cfg") {
+            // Copy .cfg files to rootDir + "/mcccPresets"
+            QString rootDir = ui->rootLineEdit->text();
+            QDir baseDir(rootDir);
+            QString mcccPresetsDir = baseDir.filePath("mcccPresets");
+            QDir().mkpath(mcccPresetsDir);
+            QString destPath = QDir(mcccPresetsDir).filePath(fileInfo.fileName());
+            if (QFile::copy(filePath, destPath)) {
+                ++importedCount;
+            }
         }
     }
-
+    
     updatePresetList();
     updatePackPresetList();
 
@@ -1182,6 +1315,13 @@ void MainWindow::do_patreonLink()
     ui->settingsTextBrowser->setOpenExternalLinks(true);
 }
 
+void MainWindow::on_reenableButton_clicked()
+{
+    // Re-enable the expiremental warning dialog.
+    QSettings settings("Falcon", "SimsSwitcher");
+    settings.setValue("dontShowExperimentalVersion", false);
+}
+
 //Close Event
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -1191,6 +1331,56 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
     // Now, pass the event to the base class to carry on with the usual closing process.
     QMainWindow::closeEvent(event);
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent *event)
+{
+    if (event->mimeData()->hasUrls())
+        event->acceptProposedAction();
+}
+
+void MainWindow::dragMoveEvent(QDragMoveEvent *event)
+{
+    if (event->mimeData()->hasUrls())
+        event->acceptProposedAction();
+}
+
+void MainWindow::dropEvent(QDropEvent *event)
+{
+    if (!event->mimeData()->hasUrls())
+        return;
+
+    // Decide target directory: Mods or (d)Mods
+    QString rootDir = ui->rootLineEdit->text();
+    QDir baseDir(rootDir);
+    // You can add a toggle or context to choose which folder to drop into.
+    // Here, we default to Mods (active)
+    QString targetDir = baseDir.filePath(activeSubDirName);
+
+    // Optionally, check if user is viewing disabled mods and drop there instead:
+    // QString targetDir = ...;
+
+    for (const QUrl &url : event->mimeData()->urls()) {
+        QString localPath = url.toLocalFile();
+        QFileInfo info(localPath);
+        QString destPath = QDir(targetDir).filePath(info.fileName());
+
+        if (info.isDir()) {
+            // Copy directory recursively
+            if (!copyDirectory(localPath, destPath)) {
+                QMessageBox::warning(this, tr("Copy Failed"),
+                    tr("Failed to copy folder: %1").arg(info.fileName()));
+            }
+        } else if (info.isFile()) {
+            if (!QFile::copy(localPath, destPath)) {
+                QMessageBox::warning(this, tr("Copy Failed"),
+                    tr("Failed to copy file: %1").arg(info.fileName()));
+            }
+        }
+    }
+
+    // Refresh the file list
+    populateFileList(baseDir.filePath(activeSubDirName), baseDir.filePath(disabledSubDirName));
 }
 
 MainWindow::~MainWindow()

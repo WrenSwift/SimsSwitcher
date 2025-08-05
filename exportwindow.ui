@@ -67,6 +67,21 @@
     </property>
    </widget>
   </widget>
+  <widget class="QWizardPage" name="wizardPage">
+   <property name="title">
+    <string>Select MCCC Settings Presets</string>
+   </property>
+   <widget class="QListWidget" name="mcccPresetList">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>0</y>
+      <width>521</width>
+      <height>211</height>
+     </rect>
+    </property>
+   </widget>
+  </widget>
   <widget class="QWizardPage" name="wizardPage3">
    <widget class="QLineEdit" name="fileLineEdit">
     <property name="geometry">
