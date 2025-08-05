@@ -26,6 +26,7 @@ protected:
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    QString getRootDir() const;
 
 private slots:
     void on_browseRootButton_clicked();
@@ -50,6 +51,7 @@ private slots:
     void on_exportButton_clicked();
     void on_importButton_clicked();
     void on_reenableButton_clicked();
+    void on_mcccButton_clicked();
 
 private:
     Ui::SimsSwitcher *ui;
@@ -72,5 +74,6 @@ private:
     void do_S4MPCheck();
     void loadPacksCsv(const QString &url, const QString &localPath);
     void populatePacksListWidgetWithMapping(const QString &folderPath, const QHash<QString, QString> &folderMapping);
+    void mcccCheck();
 };
 #endif // MAINWINDOW_H

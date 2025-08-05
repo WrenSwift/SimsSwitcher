@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "exportwindow.h" // Add this include at the top if not already present
+#include "MCCCSettings.h" // Add this include for MCCCSettings
 #include "FileListItemWidget.h"
 #include <QFileDialog>
 #include <QDir>
@@ -38,6 +39,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    mcccCheck();
     updatePresetList();
     updatePackPresetList(); // Initialize pack presets
     doVersionCheck();
@@ -82,6 +84,10 @@ MainWindow::MainWindow(QWidget *parent)
     ui->fileListWidget->setDragDropMode(QAbstractItemView::DropOnly);
 
     qDebug() << "Resource exists:" << QFile::exists(":/inc/packsDil.csv");
+}
+
+QString MainWindow::getRootDir() const {
+    return ui->rootLineEdit->text().trimmed();
 }
 
 void MainWindow::doVersionCheck() {
@@ -307,6 +313,38 @@ void MainWindow::on_browseRootButton_clicked() {
     }
 }
 
+void MainWindow::mcccCheck() {
+    // Check for "mc_cmd_center.package" in active mods.
+    QString mcccPack = "mc_cmd_center.package";
+    bool foundMccc = false;
+
+    // Get the active mods directory from the root directory.
+    QString rootDir = ui->rootLineEdit->text();
+    QDir baseDir(rootDir);
+    QString activeModsPath = baseDir.filePath(activeSubDirName);
+
+    // Check if the mccc package exists in the active mods directory.
+    if (QFile::exists(activeModsPath + "/" + mcccPack)) {
+        foundMccc = true;
+    }
+
+    if (foundMccc) {
+        // Make mcccButton visible
+        ui->mcccButton->setVisible(true);
+        ui->mcccButton->setEnabled(true);
+    }else {
+        // Hide mcccButton if not found
+        ui->mcccButton->setVisible(false);
+        ui->mcccButton->setEnabled(false);
+    }
+}
+
+void MainWindow::on_mcccButton_clicked() {
+    
+    MCCCSettings mcccSettings(this);
+    mcccSettings.exec(); // Show as a modal dialog
+}
+
 void MainWindow::on_fileSelectAllButton_clicked()
 {
     int itemCount = ui->fileListWidget->count();
@@ -393,6 +431,8 @@ void MainWindow::populateFileList(const QString& firstDir, const QString& second
             ui->fileListWidget->addItem(headerItem);
         }
 
+        mcccCheck(); // Check if MCCC is present in the active mods directory
+
         for (const QFileInfo& fileInfo : fileList) {
             if (fileInfo.fileName().compare("Resource.cfg", Qt::CaseInsensitive) == 0)
             continue; // Ignore Resource.cfg
@@ -414,20 +454,20 @@ void MainWindow::populateFileList(const QString& firstDir, const QString& second
                     tr("Are you sure you want to delete '%1'?\nThis will move the item to the system trash.").arg(fullPath),
                     QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes)
                 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+                #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
                     if (!QFile::moveToTrash(fullPath)) {
                         QMessageBox::warning(this, tr("Delete Failed"), tr("Failed to move '%1' to trash.").arg(fullPath));
                     } else {
                         delete ui->fileListWidget->takeItem(ui->fileListWidget->row(item));
                     }
-#else
+                #else
                     // Qt 5 fallback: permanently delete (or use platform-specific trash)
                     if (!QFile::remove(fullPath)) {
                         QMessageBox::warning(this, tr("Delete Failed"), tr("Failed to delete '%1'.").arg(fullPath));
                     } else {
                         delete ui->fileListWidget->takeItem(ui->fileListWidget->row(item));
                     }
-#endif
+                #endif
                 }
             });
         }
@@ -1188,7 +1228,7 @@ void MainWindow::on_importButton_clicked()
         this,
         tr("Import Preset Files"),
         QString(),
-        tr("Preset Files (*.json)")
+        tr("Preset Files (*.json);;MCCC Preset Files (*.cfg);;All Files (*.*)")
     );
 
     if (fileNames.isEmpty())
@@ -1196,33 +1236,49 @@ void MainWindow::on_importButton_clicked()
 
     QSettings settings("Falcon", "SimsSwitcher");
     int importedCount = 0;
+    // Iterate through each selected file with extension .json 
     for (const QString& filePath : fileNames) {
-        QFile file(filePath);
-        if (!file.open(QIODevice::ReadOnly))
-            continue;
+        QFileInfo fileInfo(filePath);
+        QString ext = fileInfo.suffix().toLower();
 
-        QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
-        file.close();
-        if (!doc.isObject())
-            continue;
+        if (ext == "json") {
+            QFile file(filePath);
+            if (!file.open(QIODevice::ReadOnly))
+                continue;
 
-        QJsonObject obj = doc.object();
-        QString type = obj.value("type").toString();
-        QString name = obj.value("name").toString();
-        QJsonArray itemsArray = obj.value("items").toArray();
-        QStringList items;
-        for (const QJsonValue& v : itemsArray)
-            items << v.toString();
+            QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+            file.close();
+            if (!doc.isObject())
+                continue;
 
-        if (type == "modPreset" && !name.isEmpty()) {
-            settings.setValue("presets/" + name, items);
-            ++importedCount;
-        } else if (type == "packPreset" && !name.isEmpty()) {
-            settings.setValue("packPresets/" + name, items);
-            ++importedCount;
+            QJsonObject obj = doc.object();
+            QString type = obj.value("type").toString();
+            QString name = obj.value("name").toString();
+            QJsonArray itemsArray = obj.value("items").toArray();
+            QStringList items;
+            for (const QJsonValue& v : itemsArray)
+                items << v.toString();
+
+            if (type == "modPreset" && !name.isEmpty()) {
+                settings.setValue("presets/" + name, items);
+                ++importedCount;
+            } else if (type == "packPreset" && !name.isEmpty()) {
+                settings.setValue("packPresets/" + name, items);
+                ++importedCount;
+            }
+        } else if (ext == "cfg") {
+            // Copy .cfg files to rootDir + "/mcccPresets"
+            QString rootDir = ui->rootLineEdit->text();
+            QDir baseDir(rootDir);
+            QString mcccPresetsDir = baseDir.filePath("mcccPresets");
+            QDir().mkpath(mcccPresetsDir);
+            QString destPath = QDir(mcccPresetsDir).filePath(fileInfo.fileName());
+            if (QFile::copy(filePath, destPath)) {
+                ++importedCount;
+            }
         }
     }
-
+    
     updatePresetList();
     updatePackPresetList();
 

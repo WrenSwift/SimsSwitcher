@@ -20,6 +20,7 @@ private slots:
     void on_exportButton_clicked();
 
 private:
+    void loadMCCCPresets();
     void loadPresets();
     Ui::SimsSwitcherExport *ui;
 };

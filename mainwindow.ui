@@ -45,7 +45,7 @@
      <cursorShape>ArrowCursor</cursorShape>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="modsWidget">
      <property name="enabled">
@@ -55,7 +55,7 @@
       <property name="geometry">
        <rect>
         <x>40</x>
-        <y>440</y>
+        <y>460</y>
         <width>181</width>
         <height>24</height>
        </rect>
@@ -209,6 +209,22 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <string>Delete</string>
       </property>
      </widget>
+     <widget class="QPushButton" name="mcccButton">
+      <property name="geometry">
+       <rect>
+        <x>40</x>
+        <y>420</y>
+        <width>181</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>MCCC Settings...</string>
+      </property>
+      <property name="flat">
+       <bool>false</bool>
+      </property>
+     </widget>
      <zorder>label_2</zorder>
      <zorder>label_4</zorder>
      <zorder>modsLoadButton</zorder>
@@ -221,6 +237,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <zorder>textBrowser_2</zorder>
      <zorder>fileSelectAllButton</zorder>
      <zorder>fileDeselectAllButton</zorder>
+     <zorder>mcccButton</zorder>
     </widget>
     <widget class="QWidget" name="packsWidget">
      <widget class="QListWidget" name="packsListWidget">
@@ -229,7 +246,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <x>310</x>
         <y>20</y>
         <width>371</width>
-        <height>481</height>
+        <height>491</height>
        </rect>
       </property>
      </widget>
@@ -237,7 +254,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
       <property name="geometry">
        <rect>
         <x>40</x>
-        <y>440</y>
+        <y>460</y>
         <width>191</width>
         <height>24</height>
        </rect>
