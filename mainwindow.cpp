@@ -164,7 +164,7 @@ void MainWindow::doVersionCheck() {
                         return;
                     }
                     QString downloadUrl = jsonDoc.object().value("html_url").toString();
-                    QString expMsg = QString("You are running an newer version: %1\nLatest version is: %2 You may experience bugs or unexpected behaivor.").arg(version, latestTag);
+                    QString expMsg = QString("You are running an newer version: %1\nLatest version is: %2 You may experience bugs or unexpected behavior.").arg(version, latestTag);
                     if (!downloadUrl.isEmpty()) {
                         expMsg += QString("<br><br>You can get the latest release version here: <a href=\"%1\">%1</a>").arg(downloadUrl);
                     }

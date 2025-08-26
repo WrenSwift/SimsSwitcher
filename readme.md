@@ -164,3 +164,6 @@ MIT License
 - Uses [Qt](https://www.qt.io/) for the UI framework
 
 ---
+
+<!-- EA disclaimer -->
+ This project is not affiliated with or endorsed by Electronic Arts Inc. or Maxis. The Sims 4 and related content are trademarks of Electronic Arts Inc. All rights reserved.
