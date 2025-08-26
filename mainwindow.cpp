@@ -1411,6 +1411,13 @@ void MainWindow::on_importButton_clicked()
             if (QFile::copy(filePath, destPath)) {
                 ++importedCount;
             }
+        } else if (ext == "zip"){
+            // Prompt user that zip import is done manually for now.
+            QMessageBox::information(this, tr("Import Info"),
+                                     tr("Zip file import is not automated yet. Please extract the contents of the zip file into the appropriate directories manually."));
+        } else {
+            QMessageBox::warning(this, tr("Import Error"),
+                                 tr("Unsupported file type: %1").arg(fileInfo.fileName()));
         }
     }
     
@@ -1470,12 +1477,7 @@ void MainWindow::dropEvent(QDropEvent *event)
     // Decide target directory: Mods or (d)Mods
     QString rootDir = ui->rootLineEdit->text();
     QDir baseDir(rootDir);
-    // You can add a toggle or context to choose which folder to drop into.
-    // Here, we default to Mods (active)
     QString targetDir = baseDir.filePath(activeSubDirName);
-
-    // Optionally, check if user is viewing disabled mods and drop there instead:
-    // QString targetDir = ...;
 
     for (const QUrl &url : event->mimeData()->urls()) {
         QString localPath = url.toLocalFile();
