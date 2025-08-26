@@ -26,18 +26,24 @@
 #include <QByteArray>
 #include <QJsonArray>
 #include <QEventLoop>
+#include <QDesktopServices>
+#include <QNetworkRequest>
+#include <QNetworkReply>
 
 QString activeSubDirName = "Mods"; // This is where the active mods are stored
 QString disabledSubDirName = "(d)Mods"; // Change this to your desired subdirectory
 QString csvFilePath = "inc/packsDil.csv";
 QString csvCloudPath = "https://wrenswift.com/packsDil.csv";
-QString version = "1.1.0"; // Version of the application
+QString version = "1.1.1"; // Version of the application
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::SimsSwitcher)
 {
     ui->setupUi(this);
+
+    // Set mods button as checked on startup
+    ui->menuMods->setChecked(true);
 
     mcccCheck();
     updatePresetList();
@@ -161,7 +167,7 @@ void MainWindow::doVersionCheck() {
                         return;
                     }
                     QString downloadUrl = jsonDoc.object().value("html_url").toString();
-                    QString expMsg = QString("You are running an newer version: %1\nLatest version is: %2 You may experience bugs or unexpected behaivor.").arg(version, latestTag);
+                    QString expMsg = QString("You are running an newer version: %1\nLatest version is: %2 You may experience bugs or unexpected behavior.").arg(version, latestTag);
                     if (!downloadUrl.isEmpty()) {
                         expMsg += QString("<br><br>You can get the latest release version here: <a href=\"%1\">%1</a>").arg(downloadUrl);
                     }
@@ -175,16 +181,16 @@ void MainWindow::doVersionCheck() {
                     msgBox.setIcon(QMessageBox::Warning);
                     msgBox.setStandardButtons(QMessageBox::Ok);
                     msgBox.setDefaultButton(QMessageBox::Ok);
-                    // Add do not show again checkbox
+                    // Do not show again checkbox
                     QCheckBox *dontShowAgain = new QCheckBox("Do not show this message again");
                     msgBox.setCheckBox(dontShowAgain);
-                    // Add funtion to Checkbox to save setting
+                    // Make checkbox save setting
                     connect(dontShowAgain, &QCheckBox::stateChanged, this, [this, dontShowAgain](int state) {
                         QSettings settings("Falcon", "SimsSwitcher");
                         settings.setValue("dontShowExperimentalVersion", state == Qt::Checked);
                     });
-                    msgBox.exec();   
-                    return; 
+                    msgBox.exec();
+                    return;
                 } else {
                     qDebug() << "Version check passed.";
                 }
@@ -202,40 +208,110 @@ void MainWindow::doVersionCheck() {
 
 void MainWindow::loadPacksCsv(const QString &url, const QString &localPath)
 {
+    QSettings settings("Falcon", "SimsSwitcher");
+    QDateTime lastCloudModified = settings.value("packsCsvLastModified").toDateTime();
+
+    // Check if local file exists
+    bool localFileExists = QFile::exists(localPath);
+
+    // Step 1: Get the cloud file's last modified date using a HEAD request
     QNetworkAccessManager manager;
-    QEventLoop loop;
-    QNetworkReply *reply = manager.get(QNetworkRequest(QUrl(url)));
-    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-    loop.exec();
+    QNetworkRequest request{QUrl(url)};
+    QNetworkReply *headReply = manager.head(request);
+
+    QEventLoop headLoop;
+    QObject::connect(headReply, &QNetworkReply::finished, &headLoop, &QEventLoop::quit);
+    headLoop.exec();
+
+    bool shouldDownload = true;
+    QDateTime cloudModified;
+
+    if (headReply->error() == QNetworkReply::NoError) {
+        QVariant lastModifiedVar = headReply->header(QNetworkRequest::LastModifiedHeader);
+        if (lastModifiedVar.isValid()) {
+            cloudModified = lastModifiedVar.toDateTime();
+            // If we've already downloaded this version, skip downloading
+            // BUT: If local file does not exist, always download
+            if (localFileExists && lastCloudModified.isValid() && lastCloudModified >= cloudModified) {
+                shouldDownload = false;
+            }
+        }
+    }
+    headReply->deleteLater();
 
     QByteArray csvData;
     bool usedNetwork = false;
 
-    if (reply->error() == QNetworkReply::NoError) {
-        csvData = reply->readAll();
-        usedNetwork = true;
-        // Save the latest network version locally for future offline use
-        QFile localFile(localPath);
-        if (localFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-            localFile.write(csvData);
-            localFile.close();
+    if (shouldDownload || !localFileExists) {
+        // Step 2: Download the CSV file from the cloud
+        QNetworkReply *reply = manager.get(QNetworkRequest(QUrl(url)));
+        QEventLoop loop;
+        QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+        loop.exec();
+
+        if (reply->error() == QNetworkReply::NoError) {
+            csvData = reply->readAll();
+            usedNetwork = true;
+            // Save the latest network version locally for future offline use
+            QFile localFile(localPath);
+            if (localFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+                localFile.write(csvData);
+                localFile.close();
+            }
+            // Save the cloud file's last modified date
+            if (cloudModified.isValid())
+                settings.setValue("packsCsvLastModified", cloudModified);
+            else
+                settings.setValue("packsCsvLastModified", QDateTime::currentDateTime());
+        } else {
+            // Network failed, try to load from local file
+            QFile localFile(localPath);
+            if (localFile.open(QIODevice::ReadOnly)) {
+                csvData = localFile.readAll();
+                localFile.close();
+                QMessageBox::warning(this, tr("Network Error"),
+                    tr("Failed to download packs CSV from the cloud. Using local backup copy instead."));
+            } else {
+                QMessageBox::warning(this, tr("Network Error"),
+                    tr("Failed to download packs CSV from the cloud and no local backup is available: %1").arg(reply->errorString()));
+                reply->deleteLater();
+                return;
+            }
         }
+        reply->deleteLater();
     } else {
-        // Network failed, try to load from local file
+        // Step 3: Use local file since cloud file hasn't changed
         QFile localFile(localPath);
         if (localFile.open(QIODevice::ReadOnly)) {
             csvData = localFile.readAll();
             localFile.close();
-            QMessageBox::warning(this, tr("Network Error"),
-                tr("Failed to download packs CSV from the cloud. Using local backup copy instead."));
         } else {
-            QMessageBox::warning(this, tr("Network Error"),
-                tr("Failed to download packs CSV from the cloud and no local backup is available: %1").arg(reply->errorString()));
+            // Local file missing, force network pull
+            QNetworkReply *reply = manager.get(QNetworkRequest(QUrl(url)));
+            QEventLoop loop;
+            QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+            loop.exec();
+
+            if (reply->error() == QNetworkReply::NoError) {
+                csvData = reply->readAll();
+                QFile localFile(localPath);
+                if (localFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+                    localFile.write(csvData);
+                    localFile.close();
+                }
+                if (cloudModified.isValid())
+                    settings.setValue("packsCsvLastModified", cloudModified);
+                else
+                    settings.setValue("packsCsvLastModified", QDateTime::currentDateTime());
+            } else {
+                QMessageBox::warning(this, tr("Network Error"),
+                    tr("Failed to download packs CSV from the cloud and no local backup is available: %1").arg(reply->errorString()));
+                reply->deleteLater();
+                return;
+            }
             reply->deleteLater();
-            return;
         }
     }
-    reply->deleteLater();
 
     // Parse CSV data (same as before)
     QHash<QString, QString> folderMapping;
@@ -261,15 +337,56 @@ void MainWindow::loadPacksCsv(const QString &url, const QString &localPath)
 
 void MainWindow::on_menuMods_clicked(){
     ui->mainStackedWidget->setCurrentIndex(0);
+    // Keeps menuMods push button highlighted while CurrentIndex is 0
+    ui->menuMods->setChecked(true);
+    ui->menuPacks->setChecked(false);
+    ui->menuSettings->setChecked(false);
 }
 
 void MainWindow::on_menuPacks_clicked(){
     ui->mainStackedWidget->setCurrentIndex(1);
     do_S4MPCheck();
+    // Keeps menuPacks push button highlighted while CurrentIndex is 1
+    ui->menuMods->setChecked(false);
+    ui->menuPacks->setChecked(true);
+    ui->menuSettings->setChecked(false);
 }
 
 void MainWindow::on_menuSettings_clicked(){
     ui->mainStackedWidget->setCurrentIndex(2);
+    // Keeps menuSettings push button highlighted while CurrentIndex is 2
+    ui->menuMods->setChecked(false);
+    ui->menuPacks->setChecked(false);
+    ui->menuSettings->setChecked(true);
+}
+
+void MainWindow::on_helpButton_clicked(){
+    QString helpUrl = "https://github.com/WrenSwift/SimsSwitcher/wiki";
+    QDesktopServices::openUrl(QUrl(helpUrl));
+}
+
+void MainWindow::on_refreshButton_clicked(){
+    // Refresh the file list based on the current root directory
+    QString rootDir = getRootDir();
+    if (!rootDir.isEmpty()) {
+        QDir baseDir(rootDir);
+        QString activeModsPath = baseDir.filePath(activeSubDirName);
+        QString disabledModsPath = baseDir.filePath(disabledSubDirName);
+        populateFileList(activeModsPath, disabledModsPath);
+        mcccCheck(); // Recheck for MCCC after refreshing
+    }
+
+    // Refresh the packs list based on the current game directory
+    QString gameDir = ui->gameLineEdit->text();
+    if (!gameDir.isEmpty()) {
+        loadPacksCsv(csvCloudPath, csvFilePath);
+    }
+
+    // Also refresh presets lists
+    updatePresetList();
+    updatePackPresetList();
+
+    QMessageBox::information(this, tr("Refresh Complete"), tr("The app lists have been refreshed."));
 }
 
 //Mods Page code Below
@@ -963,8 +1080,8 @@ void MainWindow::populatePacksListWidgetWithMapping(const QString &folderPath, c
             qDebug() << "Unmapped pack found:" << originalName;
             QMessageBox::warning(this, tr("Unmapped Pack Warning"),
                                  tr("The pack '%1' is not mapped in the CSV file. "
-                                    "This could mean the packs data is out of date or another error is occuring. "
-                                    "If you have not recieved a Network Error please report the issue.").arg(originalName));
+                                    "This could mean the packs data is out of date or another error is occurring. "
+                                    "If you have not received a Network Error please report the issue.").arg(originalName));
         }
     }
     // Automatically call the sorting function to group items into categories.
@@ -1294,6 +1411,13 @@ void MainWindow::on_importButton_clicked()
             if (QFile::copy(filePath, destPath)) {
                 ++importedCount;
             }
+        } else if (ext == "zip"){
+            // Prompt user that zip import is done manually for now.
+            QMessageBox::information(this, tr("Import Info"),
+                                     tr("Zip file import is not automated yet. Please extract the contents of the zip file into the appropriate directories manually."));
+        } else {
+            QMessageBox::warning(this, tr("Import Error"),
+                                 tr("Unsupported file type: %1").arg(fileInfo.fileName()));
         }
     }
     
@@ -1317,7 +1441,7 @@ void MainWindow::do_patreonLink()
 
 void MainWindow::on_reenableButton_clicked()
 {
-    // Re-enable the expiremental warning dialog.
+    // Re-enable the experimental warning dialog.
     QSettings settings("Falcon", "SimsSwitcher");
     settings.setValue("dontShowExperimentalVersion", false);
 }
@@ -1353,12 +1477,7 @@ void MainWindow::dropEvent(QDropEvent *event)
     // Decide target directory: Mods or (d)Mods
     QString rootDir = ui->rootLineEdit->text();
     QDir baseDir(rootDir);
-    // You can add a toggle or context to choose which folder to drop into.
-    // Here, we default to Mods (active)
     QString targetDir = baseDir.filePath(activeSubDirName);
-
-    // Optionally, check if user is viewing disabled mods and drop there instead:
-    // QString targetDir = ...;
 
     for (const QUrl &url : event->mimeData()->urls()) {
         QString localPath = url.toLocalFile();
