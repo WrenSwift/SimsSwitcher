@@ -53,6 +53,7 @@ private slots:
     void on_reenableButton_clicked();
     void on_mcccButton_clicked();
     void on_helpButton_clicked();
+    void on_refreshButton_clicked();
 
 private:
     Ui::SimsSwitcher *ui;

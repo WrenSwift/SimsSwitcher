@@ -42,6 +42,9 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    // Set mods button as checked on startup
+    ui->menuMods->setChecked(true);
+
     mcccCheck();
     updatePresetList();
     updatePackPresetList(); // Initialize pack presets
@@ -178,10 +181,10 @@ void MainWindow::doVersionCheck() {
                     msgBox.setIcon(QMessageBox::Warning);
                     msgBox.setStandardButtons(QMessageBox::Ok);
                     msgBox.setDefaultButton(QMessageBox::Ok);
-                    // Add do not show again checkbox
+                    // Do not show again checkbox
                     QCheckBox *dontShowAgain = new QCheckBox("Do not show this message again");
                     msgBox.setCheckBox(dontShowAgain);
-                    // Add funtion to Checkbox to save setting
+                    // Make checkbox save setting
                     connect(dontShowAgain, &QCheckBox::stateChanged, this, [this, dontShowAgain](int state) {
                         QSettings settings("Falcon", "SimsSwitcher");
                         settings.setValue("dontShowExperimentalVersion", state == Qt::Checked);
@@ -334,20 +337,56 @@ void MainWindow::loadPacksCsv(const QString &url, const QString &localPath)
 
 void MainWindow::on_menuMods_clicked(){
     ui->mainStackedWidget->setCurrentIndex(0);
+    // Keeps menuMods push button highlighted while CurrentIndex is 0
+    ui->menuMods->setChecked(true);
+    ui->menuPacks->setChecked(false);
+    ui->menuSettings->setChecked(false);
 }
 
 void MainWindow::on_menuPacks_clicked(){
     ui->mainStackedWidget->setCurrentIndex(1);
     do_S4MPCheck();
+    // Keeps menuPacks push button highlighted while CurrentIndex is 1
+    ui->menuMods->setChecked(false);
+    ui->menuPacks->setChecked(true);
+    ui->menuSettings->setChecked(false);
 }
 
 void MainWindow::on_menuSettings_clicked(){
     ui->mainStackedWidget->setCurrentIndex(2);
+    // Keeps menuSettings push button highlighted while CurrentIndex is 2
+    ui->menuMods->setChecked(false);
+    ui->menuPacks->setChecked(false);
+    ui->menuSettings->setChecked(true);
 }
 
 void MainWindow::on_helpButton_clicked(){
     QString helpUrl = "https://github.com/WrenSwift/SimsSwitcher/wiki";
     QDesktopServices::openUrl(QUrl(helpUrl));
+}
+
+void MainWindow::on_refreshButton_clicked(){
+    // Refresh the file list based on the current root directory
+    QString rootDir = getRootDir();
+    if (!rootDir.isEmpty()) {
+        QDir baseDir(rootDir);
+        QString activeModsPath = baseDir.filePath(activeSubDirName);
+        QString disabledModsPath = baseDir.filePath(disabledSubDirName);
+        populateFileList(activeModsPath, disabledModsPath);
+        mcccCheck(); // Recheck for MCCC after refreshing
+    }
+
+    // Refresh the packs list based on the current game directory
+    QString gameDir = ui->gameLineEdit->text();
+    if (!gameDir.isEmpty()) {
+        loadPacksCsv(csvCloudPath, csvFilePath);
+    }
+
+    // Also refresh presets lists
+    updatePresetList();
+    updatePackPresetList();
+
+    QMessageBox::information(this, tr("Refresh Complete"), tr("The app lists have been refreshed."));
 }
 
 //Mods Page code Below
@@ -1395,7 +1434,7 @@ void MainWindow::do_patreonLink()
 
 void MainWindow::on_reenableButton_clicked()
 {
-    // Re-enable the expiremental warning dialog.
+    // Re-enable the experimental warning dialog.
     QSettings settings("Falcon", "SimsSwitcher");
     settings.setValue("dontShowExperimentalVersion", false);
 }
