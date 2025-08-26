@@ -26,12 +26,15 @@
 #include <QByteArray>
 #include <QJsonArray>
 #include <QEventLoop>
+#include <QDesktopServices>
+#include <QNetworkRequest>
+#include <QNetworkReply>
 
 QString activeSubDirName = "Mods"; // This is where the active mods are stored
 QString disabledSubDirName = "(d)Mods"; // Change this to your desired subdirectory
 QString csvFilePath = "inc/packsDil.csv";
 QString csvCloudPath = "https://wrenswift.com/packsDil.csv";
-QString version = "1.1.0"; // Version of the application
+QString version = "1.1.1"; // Version of the application
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -183,8 +186,8 @@ void MainWindow::doVersionCheck() {
                         QSettings settings("Falcon", "SimsSwitcher");
                         settings.setValue("dontShowExperimentalVersion", state == Qt::Checked);
                     });
-                    msgBox.exec();   
-                    return; 
+                    msgBox.exec();
+                    return;
                 } else {
                     qDebug() << "Version check passed.";
                 }
@@ -202,40 +205,110 @@ void MainWindow::doVersionCheck() {
 
 void MainWindow::loadPacksCsv(const QString &url, const QString &localPath)
 {
+    QSettings settings("Falcon", "SimsSwitcher");
+    QDateTime lastCloudModified = settings.value("packsCsvLastModified").toDateTime();
+
+    // Check if local file exists
+    bool localFileExists = QFile::exists(localPath);
+
+    // Step 1: Get the cloud file's last modified date using a HEAD request
     QNetworkAccessManager manager;
-    QEventLoop loop;
-    QNetworkReply *reply = manager.get(QNetworkRequest(QUrl(url)));
-    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-    loop.exec();
+    QNetworkRequest request{QUrl(url)};
+    QNetworkReply *headReply = manager.head(request);
+
+    QEventLoop headLoop;
+    QObject::connect(headReply, &QNetworkReply::finished, &headLoop, &QEventLoop::quit);
+    headLoop.exec();
+
+    bool shouldDownload = true;
+    QDateTime cloudModified;
+
+    if (headReply->error() == QNetworkReply::NoError) {
+        QVariant lastModifiedVar = headReply->header(QNetworkRequest::LastModifiedHeader);
+        if (lastModifiedVar.isValid()) {
+            cloudModified = lastModifiedVar.toDateTime();
+            // If we've already downloaded this version, skip downloading
+            // BUT: If local file does not exist, always download
+            if (localFileExists && lastCloudModified.isValid() && lastCloudModified >= cloudModified) {
+                shouldDownload = false;
+            }
+        }
+    }
+    headReply->deleteLater();
 
     QByteArray csvData;
     bool usedNetwork = false;
 
-    if (reply->error() == QNetworkReply::NoError) {
-        csvData = reply->readAll();
-        usedNetwork = true;
-        // Save the latest network version locally for future offline use
-        QFile localFile(localPath);
-        if (localFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-            localFile.write(csvData);
-            localFile.close();
+    if (shouldDownload || !localFileExists) {
+        // Step 2: Download the CSV file from the cloud
+        QNetworkReply *reply = manager.get(QNetworkRequest(QUrl(url)));
+        QEventLoop loop;
+        QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+        loop.exec();
+
+        if (reply->error() == QNetworkReply::NoError) {
+            csvData = reply->readAll();
+            usedNetwork = true;
+            // Save the latest network version locally for future offline use
+            QFile localFile(localPath);
+            if (localFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+                localFile.write(csvData);
+                localFile.close();
+            }
+            // Save the cloud file's last modified date
+            if (cloudModified.isValid())
+                settings.setValue("packsCsvLastModified", cloudModified);
+            else
+                settings.setValue("packsCsvLastModified", QDateTime::currentDateTime());
+        } else {
+            // Network failed, try to load from local file
+            QFile localFile(localPath);
+            if (localFile.open(QIODevice::ReadOnly)) {
+                csvData = localFile.readAll();
+                localFile.close();
+                QMessageBox::warning(this, tr("Network Error"),
+                    tr("Failed to download packs CSV from the cloud. Using local backup copy instead."));
+            } else {
+                QMessageBox::warning(this, tr("Network Error"),
+                    tr("Failed to download packs CSV from the cloud and no local backup is available: %1").arg(reply->errorString()));
+                reply->deleteLater();
+                return;
+            }
         }
+        reply->deleteLater();
     } else {
-        // Network failed, try to load from local file
+        // Step 3: Use local file since cloud file hasn't changed
         QFile localFile(localPath);
         if (localFile.open(QIODevice::ReadOnly)) {
             csvData = localFile.readAll();
             localFile.close();
-            QMessageBox::warning(this, tr("Network Error"),
-                tr("Failed to download packs CSV from the cloud. Using local backup copy instead."));
         } else {
-            QMessageBox::warning(this, tr("Network Error"),
-                tr("Failed to download packs CSV from the cloud and no local backup is available: %1").arg(reply->errorString()));
+            // Local file missing, force network pull
+            QNetworkReply *reply = manager.get(QNetworkRequest(QUrl(url)));
+            QEventLoop loop;
+            QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+            loop.exec();
+
+            if (reply->error() == QNetworkReply::NoError) {
+                csvData = reply->readAll();
+                QFile localFile(localPath);
+                if (localFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+                    localFile.write(csvData);
+                    localFile.close();
+                }
+                if (cloudModified.isValid())
+                    settings.setValue("packsCsvLastModified", cloudModified);
+                else
+                    settings.setValue("packsCsvLastModified", QDateTime::currentDateTime());
+            } else {
+                QMessageBox::warning(this, tr("Network Error"),
+                    tr("Failed to download packs CSV from the cloud and no local backup is available: %1").arg(reply->errorString()));
+                reply->deleteLater();
+                return;
+            }
             reply->deleteLater();
-            return;
         }
     }
-    reply->deleteLater();
 
     // Parse CSV data (same as before)
     QHash<QString, QString> folderMapping;
@@ -270,6 +343,11 @@ void MainWindow::on_menuPacks_clicked(){
 
 void MainWindow::on_menuSettings_clicked(){
     ui->mainStackedWidget->setCurrentIndex(2);
+}
+
+void MainWindow::on_helpButton_clicked(){
+    QString helpUrl = "https://github.com/WrenSwift/SimsSwitcher/wiki";
+    QDesktopServices::openUrl(QUrl(helpUrl));
 }
 
 //Mods Page code Below
@@ -963,8 +1041,8 @@ void MainWindow::populatePacksListWidgetWithMapping(const QString &folderPath, c
             qDebug() << "Unmapped pack found:" << originalName;
             QMessageBox::warning(this, tr("Unmapped Pack Warning"),
                                  tr("The pack '%1' is not mapped in the CSV file. "
-                                    "This could mean the packs data is out of date or another error is occuring. "
-                                    "If you have not recieved a Network Error please report the issue.").arg(originalName));
+                                    "This could mean the packs data is out of date or another error is occurring. "
+                                    "If you have not received a Network Error please report the issue.").arg(originalName));
         }
     }
     // Automatically call the sorting function to group items into categories.

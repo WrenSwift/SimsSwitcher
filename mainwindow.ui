@@ -614,12 +614,34 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <rect>
       <x>648</x>
       <y>10</y>
-      <width>131</width>
+      <width>111</width>
       <height>20</height>
      </rect>
     </property>
     <property name="text">
      <string/>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="helpButton">
+    <property name="geometry">
+     <rect>
+      <x>770</x>
+      <y>0</y>
+      <width>21</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="statusTip">
+     <string/>
+    </property>
+    <property name="whatsThis">
+     <string>Help</string>
+    </property>
+    <property name="accessibleName">
+     <string>Help Button</string>
+    </property>
+    <property name="text">
+     <string>?</string>
     </property>
    </widget>
   </widget>
