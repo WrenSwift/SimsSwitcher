@@ -1,11 +1,11 @@
 # SimsSwitcher
-v1.1.0
+v1.1.1
 
 **SimsSwitcher** is a Windows desktop application for managing The Sims 4 mods and packs. It allows you to easily enable/disable mods, create and switch between presets for both mods and packs, export/import presets, and launch the game with custom pack selections.
 
 ---
 
-## What's New in 1.1.0
+## What's New in 1.1
 
 - **Drag-and-Drop Support:**  
   You can now drag files and folders directly into the Mods or (d)Mods list to add them to your game.
