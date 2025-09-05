@@ -1,0 +1,13 @@
+GNU LESSER GENERAL PUBLIC LICENSE
+Version 3, 29 June 2007
+
+Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
+Everyone is permitted to copy and distribute verbatim copies
+of this license document, but changing it is not allowed.
+
+[Full LGPL v3 text continues here...]
+
+You can get the full text at: https://www.gnu.org/licenses/lgpl-3.0.txt
+
+SimsSwitcher is not affiliated with or endorsed by Electronic Arts Inc. or Maxis. 
+The Sims 4 and related content are trademarks of Electronic Arts Inc. All rights reserved.

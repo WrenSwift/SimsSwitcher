@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+    <DisplayName>SimsSwitcher</DisplayName>
+    <Description>The SimsSwitcher application by WrenSwift.</Description>
+    <Version>1.1.2</Version>
+    <ReleaseDate>2025-09-05</ReleaseDate>
+    <Default>true</Default>
+    <Script>installscript.qs</Script>
+    <Name>com.wrenswift.simsswitcher</Name>
+    <Vendor>WrenSwift</Vendor>
+    <Licenses>
+        <License file="license.txt" name="GNU LGPL v3" />
+    </Licenses>
+    <ForcedInstallation>true</ForcedInstallation>
+</Package>

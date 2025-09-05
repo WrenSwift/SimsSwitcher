@@ -86,4 +86,3 @@ CMakeLists.txt.user*
 buildCommand.txt
 buildCommand.bat
 installerbuild.bat
-build_and_package.bat

@@ -1,0 +1,24 @@
+<Updates>
+ <ApplicationName>{AnyApplication}</ApplicationName>
+ <ApplicationVersion>1.0.0</ApplicationVersion>
+ <Checksum>true</Checksum>
+ <PackageUpdate>
+  <Name>com.wrenswift.simsswitcher</Name>
+  <DisplayName>SimsSwitcher</DisplayName>
+  <Description>The SimsSwitcher application by WrenSwift.</Description>
+  <Version>1.1.2</Version>
+  <ReleaseDate>2025-09-05</ReleaseDate>
+  <Default>true</Default>
+  <Script>installscript.qs</Script>
+  <Vendor>WrenSwift</Vendor>
+  <ForcedInstallation>true</ForcedInstallation>
+  <UpdateFile CompressedSize="16576816" OS="Any" UncompressedSize="58174177"/>
+  <DownloadableArchives>generic.7z,iconengines.7z,icons.7z,imageformats.7z,inc.7z,networkinformation.7z,platforms.7z,styles.7z,tls.7z,translations.7z,content.7z</DownloadableArchives>
+  <Licenses>
+   <License file="license.txt" name="GNU LGPL v3"/>
+  </Licenses>
+  <SHA1>53298ea39542ab3ae71cc4cc3aa0561062eb3d5d</SHA1>
+ </PackageUpdate>
+ <SHA1>7740743b70cc44f5b4103416305f0b825652875e</SHA1>
+ <MetadataName>2025-09-05-1635_meta.7z</MetadataName>
+</Updates>
