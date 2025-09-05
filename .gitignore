@@ -80,7 +80,10 @@ CMakeLists.txt.user*
 .rcc/
 .uic/
 /build*/
+/installer*/
 
 #buildCommand Files
 buildCommand.txt
 buildCommand.bat
+installerbuild.bat
+build_and_package.bat

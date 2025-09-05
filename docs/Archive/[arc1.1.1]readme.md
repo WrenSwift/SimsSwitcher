@@ -1,5 +1,5 @@
 # SimsSwitcher
-v1.1.2
+v1.1.1
 
 **SimsSwitcher** is a Windows desktop application for managing The Sims 4 mods and packs. It allows you to easily enable/disable mods, create and switch between presets for both mods and packs, export/import presets, and launch the game with custom pack selections.
 
@@ -61,34 +61,17 @@ v1.1.2
 
 ### Installation
 
-You can install SimsSwitcher using either the installer or the portable ZIP package:
-
-#### Option 1: Installer (Recommended)
-
-1. **Download the Installer:**
-  - Go to the [Releases page](https://github.com/WrenSwift/SimsSwitcher/releases).
-  - Download the `.exe` installer for the latest version.
-
-2. **Run the Installer:**
-  - Double-click the downloaded installer and follow the on-screen instructions.
-
-3. **Launch the App:**
-  - Start SimsSwitcher from the Start Menu or desktop shortcut.
-
-#### Option 2: Portable ZIP
-
-1. **Download the ZIP Package:**
-  - Go to the [Releases page](https://github.com/WrenSwift/SimsSwitcher/releases).
-  - Download the `.zip` file for the latest version.
+1. **Download the latest release:**
+    - Go to the [Releases page](https://github.com/WrenSwift/SimsSwitcher/releases) of the GitHub repository.
+    - Download the `.zip` file for the latest version.
 
 2. **Unpack:**
-  - Extract the contents of the `.zip` file to a folder of your choice.
+    - Extract the contents of the `.zip` file to a folder of your choice.
 
 3. **Run:**
-  - Double-click `SimsSwitcher.exe` inside the extracted folder to start the application.
+    - Double-click `SimsSwitcher.exe` inside the extracted folder to start the application.
 
-No installation is required for the portable version.  
-If you encounter issues running the app, ensure you have the latest Visual C++ Redistributable installed.
+No installation is required. If you encounter issues running the app, ensure you have the latest Visual C++ Redistributable installed.
 
 ---
 
