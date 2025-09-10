@@ -36,16 +36,16 @@
     <property name="geometry">
      <rect>
       <x>59</x>
-      <y>39</y>
-      <width>681</width>
-      <height>511</height>
+      <y>49</y>
+      <width>711</width>
+      <height>501</height>
      </rect>
     </property>
     <property name="cursor">
      <cursorShape>ArrowCursor</cursorShape>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="modsWidget">
      <property name="enabled">
@@ -69,8 +69,8 @@
        <rect>
         <x>310</x>
         <y>20</y>
-        <width>371</width>
-        <height>491</height>
+        <width>401</width>
+        <height>481</height>
        </rect>
       </property>
       <property name="alternatingRowColors">
@@ -225,6 +225,24 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <bool>false</bool>
       </property>
      </widget>
+     <widget class="QLabel" name="modsWarningLabel">
+      <property name="geometry">
+       <rect>
+        <x>470</x>
+        <y>0</y>
+        <width>241</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>8</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
      <zorder>label_2</zorder>
      <zorder>label_4</zorder>
      <zorder>modsLoadButton</zorder>
@@ -238,6 +256,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <zorder>fileSelectAllButton</zorder>
      <zorder>fileDeselectAllButton</zorder>
      <zorder>mcccButton</zorder>
+     <zorder>modsWarningLabel</zorder>
     </widget>
     <widget class="QWidget" name="packsWidget">
      <widget class="QListWidget" name="packsListWidget">

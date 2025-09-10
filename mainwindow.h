@@ -77,5 +77,7 @@ private:
     void loadPacksCsv(const QString &url, const QString &localPath);
     void populatePacksListWidgetWithMapping(const QString &folderPath, const QHash<QString, QString> &folderMapping);
     void mcccCheck();
+    void do_PBmodNotice();
+    void do_PBmodCheck();
 };
 #endif // MAINWINDOW_H

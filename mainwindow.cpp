@@ -35,6 +35,7 @@ QString disabledSubDirName = "(d)Mods"; // Change this to your desired subdirect
 QString csvFilePath = "inc/packsDil.csv";
 QString csvCloudPath = "https://wrenswift.com/packsDil.csv";
 QString version = "1.1.1"; // Version of the application
+bool PBmodErrors = false; // Global flag for mod errors
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -50,6 +51,8 @@ MainWindow::MainWindow(QWidget *parent)
     updatePackPresetList(); // Initialize pack presets
     doVersionCheck();
     do_patreonLink();
+    do_PBmodCheck();
+    do_PBmodNotice();
 
     // Set the window title
     this->setWindowTitle("SimsSwitcher");
@@ -94,6 +97,18 @@ MainWindow::MainWindow(QWidget *parent)
 
 QString MainWindow::getRootDir() const {
     return ui->rootLineEdit->text().trimmed();
+}
+
+void MainWindow::do_PBmodCheck() {
+    //Check for errors reported by PlumbBuddy. If errors are found, set PBmodErrors to true. This will have to be determined by figuring out how PlumbBuddy reports errors.
+}
+
+//This could be integrated into do_PBmodCheck later. When that integration happens, remove the global PBmodErrors variable and make it a member variable of MainWindow.
+void MainWindow::do_PBmodNotice() {
+    if (PBmodErrors == true)
+    {
+        ui->modsWarningLabel->setText("PlumbBuddy has detected mod errors or updates.");
+    }
 }
 
 void MainWindow::doVersionCheck() {
